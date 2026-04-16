@@ -2,8 +2,18 @@
   "version": 1,
   "vote_servers": [
     {
-      "url": "https://46-101-255-48.sslip.io",
-      "label": "Primary",
+      "url": "https://val1.46-101-255-48.sslip.io",
+      "label": "val1",
+      "operator_address": ""
+    },
+    {
+      "url": "https://val2.46-101-255-48.sslip.io",
+      "label": "val2",
+      "operator_address": ""
+    },
+    {
+      "url": "https://val3.46-101-255-48.sslip.io",
+      "label": "val3",
       "operator_address": ""
     }
   ],
