@@ -1,6 +1,8 @@
 # token-holder-voting-config
 
-Service discovery configuration for shielded voting infrastructure.
+Service discovery and round configuration for shielded voting infrastructure. Published via GitHub Pages so wallets can fetch it without running their own chain node.
+
+The schema targets [ZIP 1244 §Vote Configuration Format](https://github.com/zcash/zips/pull/1244).
 
 ## Structure
 
@@ -9,19 +11,55 @@ staging/voting-config.json      # servers used by staging/dev builds
 production/voting-config.json   # servers used by production wallet builds
 ```
 
-Each `voting-config.json` contains:
+## Schema
+
+Target schema (ZIP 1244):
 
 ```json
 {
-  "version": 1,
+  "config_version": 1,
+  "vote_round_id": "<64 lowercase hex chars>",
+  "title": "Round 1: Protocol Upgrade",
+  "description": "Vote on the proposed protocol upgrade.",
   "vote_servers": [
-    { "url": "https://...", "label": "...", "operator_address": "sv1..." }
+    { "url": "https://...", "label": "val1" }
   ],
-  "pir_servers": [
-    { "url": "https://...", "label": "..." }
-  ]
+  "pir_endpoints": [
+    { "url": "https://...", "label": "PIR Server" }
+  ],
+  "snapshot_height": 2800000,
+  "vote_end_time": 1735689600,
+  "proposals": [
+    {
+      "id": 1,
+      "title": "Approve protocol upgrade",
+      "options": [
+        { "index": 0, "label": "Support" },
+        { "index": 1, "label": "Oppose" }
+      ]
+    }
+  ],
+  "supported_versions": {
+    "pir": ["v0"],
+    "vote_protocol": "v0",
+    "tally": "v0",
+    "vote_server": "v0"
+  }
 }
 ```
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `config_version` | int | Schema version. Currently `1`. |
+| `vote_round_id` | hex, 64 chars | Must match the chain's active round id. |
+| `title`, `description` | string | Shown to the user before signing. |
+| `vote_servers[]` | `{url, label}` | Chain + helper REST endpoints. |
+| `pir_endpoints[]` | `{url, label}` | Nullifier PIR endpoints. |
+| `snapshot_height` | int > 0 | Orchard snapshot height. |
+| `vote_end_time` | uint64 | Unix seconds. Wallets refuse to submit after this. |
+| `proposals[]` | `{id, title, options[]}` | 1–15 proposals, 2–8 options each (0-indexed). |
+| `supported_versions.pir` | `[string]` | Wallet must support ≥1 listed PIR version. |
+| `supported_versions.{vote_protocol, tally, vote_server}` | string | Wallet must recognize each version. |
 
 ## CDN
 
