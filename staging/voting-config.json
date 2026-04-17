@@ -6,18 +6,15 @@
   "vote_servers": [
     {
       "url": "https://val1.46-101-255-48.sslip.io",
-      "label": "val1",
-      "operator_address": ""
+      "label": "val1"
     },
     {
       "url": "https://val2.46-101-255-48.sslip.io",
-      "label": "val2",
-      "operator_address": ""
+      "label": "val2"
     },
     {
       "url": "https://val3.46-101-255-48.sslip.io",
-      "label": "val3",
-      "operator_address": ""
+      "label": "val3"
     }
   ],
   "pir_endpoints": [

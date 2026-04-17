@@ -61,14 +61,6 @@ Target schema (ZIP 1244):
 | `supported_versions.pir` | `[string]` | Wallet must support ≥1 listed PIR version. |
 | `supported_versions.{vote_protocol, tally, vote_server}` | string | Wallet must recognize each version. |
 
-### Non-standard fields
-
-`vote_servers[]` entries may carry an `operator_address` field. It is consumed by the vote-sdk admin API for server registration and is **not** part of ZIP 1244. Wallets following the ZIP should ignore unknown fields.
-
-### Staging hostnames
-
-The staging entries use `*.46-101-255-48.sslip.io`. sslip is **dev infrastructure** — wallets SHOULD NOT pin these hostnames in release builds. Production endpoints will use stable DNS names.
-
 ## CDN
 
 Files are served via GitHub Pages at:
