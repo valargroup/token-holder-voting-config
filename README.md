@@ -41,9 +41,9 @@ Target schema (ZIP 1244):
   ],
   "supported_versions": {
     "pir": ["v0"],
-    "vote_protocol": ["v0"],
-    "tally": ["v0"],
-    "vote_server": ["v0"]
+    "vote_protocol": "v0",
+    "tally": "v0",
+    "vote_server": "v0"
   }
 }
 ```
@@ -58,12 +58,12 @@ Target schema (ZIP 1244):
 | `snapshot_height` | int > 0 | Orchard snapshot height. |
 | `vote_end_time` | uint64 | Unix seconds. Wallets refuse to submit after this. |
 | `proposals[]` | `{id, title, options[]}` | 1–15 proposals, 2–8 options each (0-indexed). |
-| `supported_versions.{pir, vote_protocol, tally, vote_server}` | `[string]` | Wallet must support ≥1 listed version for each component. |
+| `supported_versions.pir` | `[string]` | Wallet must support ≥1 listed PIR version. |
+| `supported_versions.{vote_protocol, tally, vote_server}` | string | Wallet must recognize each version. |
 
-### Deviations from ZIP 1244
+### Non-standard fields
 
-- **`supported_versions.{vote_protocol, tally, vote_server}` are arrays**, not bare strings. The ZIP draft types these three as `string` and only `pir` as `[string]`. We use `[string]` uniformly so a server in a transition window can advertise support for multiple versions of any component. Proposed as a ZIP revision — see the ZIP-issues section of `docs/wallet-integration-todo.md` in the vote-sdk repo.
-- **`vote_servers[]` entries may carry an `operator_address` field.** Consumed by the vote-sdk admin API for server registration; not part of ZIP 1244. Wallets following the ZIP should ignore unknown fields.
+`vote_servers[]` entries may carry an `operator_address` field. It is consumed by the vote-sdk admin API for server registration and is **not** part of ZIP 1244. Wallets following the ZIP should ignore unknown fields.
 
 ### Staging hostnames
 
