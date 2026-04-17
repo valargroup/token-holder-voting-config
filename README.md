@@ -40,10 +40,10 @@ Target schema (ZIP 1244):
     }
   ],
   "supported_versions": {
-    "pir": ["v0", "v1"],
+    "pir": ["v0"],
     "vote_protocol": "v0",
     "tally": "v0",
-    "vote_server": "v1"
+    "vote_server": "v0"
   }
 }
 ```
