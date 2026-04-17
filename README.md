@@ -91,13 +91,17 @@ Same process: open a PR removing the entry.
 
 ## Status
 
-As of 2026-04-17 the published files contain `config_version`, `vote_servers[]`, `pir_endpoints[]`, and `supported_versions`. Round-specific fields required by ZIP 1244 are still pending:
+As of 2026-04-17:
 
-- `vote_round_id`, `title`, `description`, `snapshot_height`, `vote_end_time`, `proposals[]` — added when a round is live.
+- **`staging/voting-config.json`** is schema-complete against ZIP 1244 but the round-specific fields (`vote_round_id`, `title`, `description`, `snapshot_height`, `vote_end_time`, `proposals[]`) are **filler values**, not a live round. `vote_round_id` is 64 zeros, `snapshot_height: 1`, `vote_end_time` is a 2099 placeholder, and the proposal list is a single "Filler proposal" entry. Wallets pointed at this config will not find a matching round on-chain and should not attempt to vote against these values.
+- **`production/voting-config.json`** is still a stub: empty `vote_servers`, empty `pir_endpoints`, no round-specific fields. Will be filled in when production opens.
+
+Still pending for both files:
+
 - Per-round vs single-file layout decision.
 - Config authenticity model (detached `.sig`, JWS envelope, Sigstore, or documented TOFU).
 - Published JSON Schema for programmatic validation.
 - Stable (non-sslip) staging hostnames.
-- `production/voting-config.json` endpoints and round data.
+- Replacing staging filler values with a real round when one is live.
 
 See `docs/wallet-integration-todo.md` in the vote-sdk repo for the full list.

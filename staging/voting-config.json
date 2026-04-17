@@ -1,5 +1,8 @@
 {
   "config_version": 1,
+  "vote_round_id": "0000000000000000000000000000000000000000000000000000000000000000",
+  "title": "Staging Test Round (filler)",
+  "description": "Placeholder round for staging schema validation. Not backed by a real on-chain round — wallets pointed at this config should not attempt to vote.",
   "vote_servers": [
     {
       "url": "https://val1.46-101-255-48.sslip.io",
@@ -21,6 +24,18 @@
     {
       "url": "https://46-101-255-48.sslip.io/nullifier",
       "label": "PIR Server"
+    }
+  ],
+  "snapshot_height": 1,
+  "vote_end_time": 4070908800,
+  "proposals": [
+    {
+      "id": 1,
+      "title": "Filler proposal",
+      "options": [
+        { "index": 0, "label": "Placeholder option A" },
+        { "index": 1, "label": "Placeholder option B" }
+      ]
     }
   ],
   "supported_versions": {
