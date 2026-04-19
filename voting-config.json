@@ -1,0 +1,29 @@
+{
+  "config_version": 1,
+  "vote_servers": [
+    {
+      "url": "https://vote-chain-primary.valargroup.org",
+      "label": "primary"
+    },
+    {
+      "url": "https://vote-chain-secondary.valargroup.org",
+      "label": "secondary"
+    }
+  ],
+  "pir_endpoints": [
+    {
+      "url": "https://pir.valargroup.org",
+      "label": "PIR primary"
+    },
+    {
+      "url": "https://pir-backup.valargroup.org",
+      "label": "PIR backup"
+    }
+  ],
+  "supported_versions": {
+    "pir": ["v0"],
+    "vote_protocol": "v0",
+    "tally": "v0",
+    "vote_server": "v0"
+  }
+}

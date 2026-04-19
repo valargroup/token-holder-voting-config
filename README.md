@@ -4,13 +4,6 @@ Service discovery and round configuration for shielded voting infrastructure. Pu
 
 The schema targets [ZIP 1244 §Vote Configuration Format](https://github.com/zcash/zips/pull/1244).
 
-## Structure
-
-```
-staging/voting-config.json      # servers used by staging/dev builds
-production/voting-config.json   # servers used by production wallet builds
-```
-
 ## Schema
 
 Target schema (ZIP 1244):
@@ -63,17 +56,16 @@ Target schema (ZIP 1244):
 
 ## CDN
 
-Files are served via GitHub Pages at:
+Served via GitHub Pages at:
 
-- **Staging:** `https://valargroup.github.io/token-holder-voting-config/staging/voting-config.json`
-- **Production:** `https://valargroup.github.io/token-holder-voting-config/production/voting-config.json`
+`https://valargroup.github.io/token-holder-voting-config/voting-config.json`
 
 Deployments happen automatically on push to `main`.
 
 ## Adding a server
 
 1. Fork this repo
-2. Add your server entry to the appropriate `voting-config.json`
+2. Add your server entry to `voting-config.json`
 3. Open a pull request
 4. A maintainer reviews and merges — your server is live within ~30 seconds
 
