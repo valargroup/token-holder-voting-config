@@ -48,7 +48,7 @@ Target schema (ZIP 1244):
 | `title`, `description` | string | Shown to the user before signing. |
 | `vote_servers[]` | `{url, label}` | Chain + helper REST endpoints. |
 | `pir_endpoints[]` | `{url, label}` | Nullifier PIR endpoints. |
-| `snapshot_height` | int > 0 | Orchard snapshot height. |
+| `snapshot_height` | int > 0 | Orchard snapshot height. Multiple of 10. PIR servers must serve this exact height; the admin UI auto-populates round drafts from it. |
 | `vote_end_time` | uint64 | Unix seconds. Wallets refuse to submit after this. |
 | `proposals[]` | `{id, title, options[]}` | 1–15 proposals, 2–8 options each (0-indexed). |
 | `supported_versions.pir` | `[string]` | Wallet must support ≥1 listed PIR version. |
