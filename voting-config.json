@@ -1,5 +1,6 @@
 {
   "config_version": 1,
+  "vote_round_id": "0000000000000000000000000000000000000000000000000000000000000000",
   "vote_servers": [
     {
       "url": "https://vote-chain-primary.valargroup.org",
@@ -21,10 +22,12 @@
     }
   ],
   "snapshot_height": 3312900,
+  "vote_end_time": 0,
+  "proposals": [],
   "supported_versions": {
     "pir": ["v0"],
     "vote_protocol": "v0",
     "tally": "v0",
-    "vote_server": "v0"
+    "vote_server": "v1"
   }
 }
