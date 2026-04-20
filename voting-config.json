@@ -20,7 +20,7 @@
       "label": "PIR backup"
     }
   ],
-  "snapshot_height": 3312890,
+  "snapshot_height": 3312900,
   "supported_versions": {
     "pir": ["v0"],
     "vote_protocol": "v0",
