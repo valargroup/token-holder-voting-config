@@ -74,8 +74,12 @@ Deployments happen automatically on push to `main`.
 
 ## Adding a server
 
-1. Fork this repo
-2. Add your server entry to `voting-config.json`
+Operators join the chain using `join.sh` from [vote-sdk](https://github.com/valargroup/vote-sdk)
+(`join-loop` waits for funding and runs `create-val-tx`). That flow does **not** add
+your REST URL here automatically.
+
+1. After you are bonded, fork this repo (or push a branch if you have access)
+2. Add your server entry to `vote_servers` in `voting-config.json` (URL + label)
 3. Open a pull request
 4. A maintainer reviews and merges — your server is live within ~30 seconds
 
