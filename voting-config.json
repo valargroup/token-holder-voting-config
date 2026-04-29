@@ -4,11 +4,11 @@
   "vote_servers": [
     {
       "url": "https://vote-chain-primary.valargroup.org",
-      "label": "primary"
+      "label": "valarg-genesis"
     },
     {
       "url": "https://vote-chain-secondary.valargroup.org",
-      "label": "secondary"
+      "label": "valarg-secondary"
     }
   ],
   "pir_endpoints": [
