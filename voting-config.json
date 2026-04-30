@@ -1,6 +1,6 @@
 {
   "config_version": 1,
-  "vote_round_id": "ae375782051a8a6be784d9b4a8b5e016dbb5adcca4596dfa7e71f528b572903d",
+  "vote_round_id": "2771bf7f23f05ffee61d65b9fbd039b550033899e78a0b343f8928850cf7a305",
   "vote_servers": [
     {
       "url": "https://vote-chain-primary.valargroup.org",
@@ -22,7 +22,7 @@
     }
   ],
   "snapshot_height": 3317510,
-  "vote_end_time": 1777516680,
+  "vote_end_time": 1778191140,
   "proposals": [
     {
       "id": 1,
