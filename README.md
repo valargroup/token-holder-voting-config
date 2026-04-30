@@ -18,17 +18,6 @@ The schema targets [ZIP 1244 §Vote Configuration Format](https://github.com/zca
   ],
   "snapshot_height": 2800000,
   "vote_end_time": 1735689600,
-  "proposals": [
-    {
-      "id": 1,
-      "title": "Approve protocol upgrade",
-      "description": "Approve or oppose the proposed protocol upgrade.",
-      "options": [
-        { "index": 0, "label": "Support" },
-        { "index": 1, "label": "Oppose" }
-      ]
-    }
-  ],
   "supported_versions": {
     "pir": ["v0"],
     "vote_protocol": "v0",
@@ -44,25 +33,51 @@ The schema targets [ZIP 1244 §Vote Configuration Format](https://github.com/zca
 | `vote_round_id` | hex, 64 chars | Must match the chain's active round id. |
 | `vote_servers[]` | `{url, label}` | Chain REST + helper endpoints. Wallets use the first for API traffic; all are used for share submission. |
 | `pir_endpoints[]` | `{url, label}` | Nullifier PIR endpoints. Wallets use the first. |
-| `snapshot_height` | int > 0 | Orchard snapshot height. Multiple of 10. PIR servers must serve this exact height; the admin UI auto-populates round drafts from it. |
-| `vote_end_time` | uint64 | Unix seconds. Wallets refuse to submit after this. |
-| `proposals[]` | `{id, title, description, options[]}` | 1–15 proposals, 2–8 options each (0-indexed). Must match the chain byte-for-byte (see below). |
+| `snapshot_height` | int > 0 | Orchard snapshot height. Multiple of 10. Informational in the config; wallets use chain round data when voting. |
+| `vote_end_time` | uint64 | Unix seconds. Informational in the config; wallets use chain round data when voting. |
 | `supported_versions.pir` | `[string]` | Wallet must support ≥1 listed PIR version. |
 | `supported_versions.{vote_protocol, tally, vote_server}` | string | Wallet must recognize each version. |
 
-Round-level title and description are **not** part of this config — they live on the chain and wallets read them from the round object directly.
+Round-level title, description, and proposals are **not** part of this config — they live on the chain and wallets read them from the round object directly.
 
-## Proposals must match the chain byte-for-byte
+## Proposals come from the chain
 
-The chain commits to the proposals array via `VoteRound.proposals_hash = SHA-256(canonical_json(proposals))`. Wallets recompute this on fetch and hard-fail if it doesn't match the on-chain round.
+The chain stores the authoritative proposal list on `VoteRound.proposals` and commits to it via `VoteRound.proposals_hash`. Wallets fetch proposal titles, descriptions, and options from chain REST endpoints such as `/shielded-vote/v1/rounds` and `/shielded-vote/v1/round/{round_id}`.
 
-Canonical form (ZIP 1244 §"Proposals Hash"):
-- Proposals sorted by `id` ascending
-- Options sorted by `index` ascending
-- Keys emitted in order: `id`, `title`, `description`, `options` (and per option: `index`, `label`)
-- No whitespace, UTF-8, no forward-slash escaping (matches Rust `serde_json::to_string`)
+This config only tells wallets which round and service endpoints to use. Updating proposal text means creating or updating the on-chain voting round, not editing `voting-config.json`.
 
-Any difference — a trailing space, a smart quote, a missing option — and every wallet will reject the config. When updating `proposals`, make sure the content matches what the round creator submitted on-chain.
+## Recommended Sequence Flow
+
+```mermaid
+flowchart LR
+  governanceOpen["Governance Screen Reopen"] --> fetchConfig["Fetch GitHub CDN Config"]
+  fetchConfig --> configFields["Config: endpoints, versions, vote_round_id"]
+  configFields --> configureURLs["Configure Vote/PIR URLs"]
+  configureURLs --> queryChain["Query Chain REST API"]
+
+  queryChain --> rounds["/shielded-vote/v1/rounds"]
+  queryChain --> roundById["/shielded-vote/v1/round/{round_id}"]
+  queryChain --> tally["/shielded-vote/v1/tally-results/{round_id}"]
+
+  rounds --> voteRound["VoteRound On Chain"]
+  roundById --> voteRound
+  tally --> results["Tally Results"]
+
+  voteRound --> proposals["VoteRound.proposals"]
+  voteRound --> proposalsHash["VoteRound.proposals_hash"]
+  voteRound --> roundMeta["snapshot_height, vote_end_time, ea_pk, status"]
+
+  configFields --> bindRound["Check config.vote_round_id exists in chain rounds"]
+  voteRound --> bindRound
+
+  bindRound --> renderUI["Render Governance UI"]
+  proposals --> renderUI
+  roundMeta --> renderUI
+  results --> renderUI
+
+  renderUI --> submitVotes["Submit delegation/vote/share requests"]
+  submitVotes --> voteServers["Configured Vote Servers"]
+```
 
 ## CDN
 
