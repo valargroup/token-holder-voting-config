@@ -23,61 +23,8 @@
   ],
   "snapshot_height": 3317510,
   "vote_end_time": 1778191140,
-  "proposals": [
-    {
-      "id": 1,
-      "title": "Network Sustainability Mechanism (NSM)",
-      "description": "What is your general sentiment toward adding protocol support for the Network Sustainability Mechanism (NSM), including smoothing the issuance curve, which allows ZEC to be removed from circulation and later reissued as future block rewards to help sustain network security while preserving the 21 million ZEC supply cap?",
-      "options": [
-        {
-          "index": 0,
-          "label": "Support"
-        },
-        {
-          "index": 1,
-          "label": "Oppose"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "title": "Fee Burning via NSM",
-      "description": "What is your general sentiment toward burning 60% of transaction fees via the Network Sustainability Mechanism (NSM)? The goals are to demonstrate Zcash's commitment to long-term sustainability, to burn ZEC so that it can be re-issued in the future without exceeding the 21M supply cap, and in the context of dynamic fees, to prevent miners from manipulating fees.\n\nReference: ZIP-235",
-      "options": [
-        {
-          "index": 0,
-          "label": "Support"
-        },
-        {
-          "index": 1,
-          "label": "Oppose"
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "title": "Project Tachyon",
-      "description": "What is your general sentiment toward deploying a new shielded protocol or pool to address scalability challenges as part of Project Tachyon?",
-      "options": [
-        {
-          "index": 0,
-          "label": "Hell yeah"
-        },
-        {
-          "index": 1,
-          "label": "Yes"
-        },
-        {
-          "index": 2,
-          "label": "No"
-        }
-      ]
-    }
-  ],
   "supported_versions": {
-    "pir": [
-      "v0"
-    ],
+    "pir": ["v0"],
     "vote_protocol": "v0",
     "tally": "v0",
     "vote_server": "v1"
