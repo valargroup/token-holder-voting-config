@@ -1,0 +1,23 @@
+name: Validate config + checkpoints
+on:
+  pull_request:
+    paths:
+      - "voting-config.json"
+      - "voting-config.example.json"
+      - "checkpoints/**"
+      - "manifest-signers/**"
+      - "scripts/validate-config.mjs"
+      - ".github/workflows/validate.yml"
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate JSON shape + ed25519 signatures
+        run: node scripts/validate-config.mjs

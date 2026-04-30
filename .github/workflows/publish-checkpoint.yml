@@ -1,0 +1,71 @@
+name: Publish CometBFT checkpoint
+
+on:
+  schedule:
+    # Every 12 hours, UTC. Trust period is 14 days; this gives ~28x headroom
+    # so a single failed run is invisible to wallets.
+    - cron: "0 */12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: publish-checkpoint
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      # Approval gate for workflow_dispatch is configured in the Environment
+      # settings; the Manifest signer secret is also pinned to this Environment.
+      name: production-manifest-signer
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need full token to push commits back; the default GITHUB_TOKEN works
+          # for pushes to the same repo.
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Publish + sign checkpoint
+        env:
+          SVOTE_RPC_PRIMARY:        ${{ vars.SVOTE_RPC_PRIMARY   || 'https://vote-rpc-primary.valargroup.org' }}
+          SVOTE_RPC_SECONDARY:      ${{ vars.SVOTE_RPC_SECONDARY || 'https://vote-rpc-secondary.valargroup.org' }}
+          SVOTE_CHAIN_ID:           ${{ vars.SVOTE_CHAIN_ID || 'svote-1' }}
+          SVOTE_SIGNER_ID:          ${{ vars.SVOTE_SIGNER_ID || 'valarg-poc' }}
+          MANIFEST_SIGNER_PRIVKEY:  ${{ secrets.MANIFEST_SIGNER_PRIVKEY }}
+        run: node scripts/publish-checkpoint.mjs
+
+      - name: Validate the freshly-written checkpoint
+        run: node scripts/validate-config.mjs
+
+      - name: Commit + push
+        run: |
+          git config user.name  'shielded-vote-checkpoint-publisher'
+          git config user.email 'noreply@valargroup.org'
+          git add checkpoints/
+          if git diff --cached --quiet; then
+            echo "no checkpoint changes to commit"
+            exit 0
+          fi
+          git commit -m "checkpoint: $(jq -r .height checkpoints/latest.json)"
+          git push origin HEAD:main
+
+      - name: Open incident issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `incident:checkpoint-publisher failure (${context.runId})`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              title,
+              labels: ['incident', 'checkpoint-publisher'],
+              body: `Run failed: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nSee vote-sdk/docs/runbooks/publish-checkpoint.md for triage steps.`,
+            });

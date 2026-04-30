@@ -1,0 +1,56 @@
+{
+  "config_version": 1,
+  "vote_round_id": "6823028ccc36f2fffc5a6d9af3e62a918a33913a8f37c2d3efe962a0357aa03f",
+  "vote_servers": [
+    {
+      "url": "https://vote-chain-primary.valargroup.org",
+      "label": "valarg-genesis"
+    },
+    {
+      "url": "https://vote-chain-secondary.valargroup.org",
+      "label": "valarg-secondary"
+    }
+  ],
+  "pir_endpoints": [
+    {
+      "url": "https://pir.valargroup.org",
+      "label": "PIR primary"
+    },
+    {
+      "url": "https://pir-backup.valargroup.org",
+      "label": "PIR backup"
+    }
+  ],
+  "snapshot_height": 3317500,
+  "vote_end_time": 1776880080,
+  "proposals": [
+    {
+      "id": 1,
+      "title": "Network Sustainability Mechanism (NSM)",
+      "description": "What is your general sentiment toward adding protocol support for the Network Sustainability Mechanism (NSM), including smoothing the issuance curve, which allows ZEC to be removed from circulation and later reissued as future block rewards to help sustain network security while preserving the 21 million ZEC supply cap?",
+      "options": [
+        { "index": 0, "label": "Support" },
+        { "index": 1, "label": "Oppose" }
+      ]
+    }
+  ],
+  "supported_versions": {
+    "pir": ["v0"],
+    "vote_protocol": "v0",
+    "tally": "v0",
+    "vote_server": "v1"
+  },
+  "round_signatures": {
+    "round_id": "6823028ccc36f2fffc5a6d9af3e62a918a33913a8f37c2d3efe962a0357aa03f",
+    "ea_pk": "AQIDBAUGBwgJEBESExQVFhcYGSAhIiMkJSYnKCkwMao=",
+    "valset_hash": "4f3e0c2c1d8b1a3e7f2c5b8a9d6e0f1c2a3b4c5d6e7f8090a1b2c3d4e5f60718",
+    "signed_payload_hash": "1822af0e7d6fdaf179c8b8b59af0d9650325447e927dd0e1baab5c052cf9ca8d",
+    "signatures": [
+      {
+        "signer": "valarg-poc",
+        "alg": "ed25519",
+        "signature": "AYG0pos6UKxAttul6scJJyuyi6TT6O8RcJRgC+MbVdkzvsBHiJyA/ulaqXmpL1EzVxN2N8ukRObZqccCgbh/Aw=="
+      }
+    ]
+  }
+}

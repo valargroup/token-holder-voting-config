@@ -20,6 +20,14 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      # Validate before deploying — catches a stripped/forged signature in the
+      # last 30s before users start fetching it. The same script runs in
+      # validate.yml on PRs; this is the belt-and-suspenders check on push.
+      - name: Validate config + checkpoints
+        run: node scripts/validate-config.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
