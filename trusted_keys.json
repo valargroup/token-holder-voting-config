@@ -1,0 +1,8 @@
+[
+  {
+    "key_id": "valar-test",
+    "alg": "ed25519",
+    "pubkey": "rKDbmhkoW9ja7dMiCV+1uTao7wXWV6xN/57erkrOuiQ=",
+    "notes": "DO NOT USE IN PRODUCTION. Development-only key."
+  }
+]

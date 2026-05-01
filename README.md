@@ -1,103 +1,134 @@
 # token-holder-voting-config
 
-Service discovery and round configuration for shielded voting infrastructure. Published via GitHub Pages so wallets can fetch it without running their own chain node.
+Service discovery and round authentication for shielded voting infrastructure. This repo is published through GitHub Pages so wallets can find vote servers, PIR endpoints, and authenticated round metadata without running their own chain node.
 
-The schema targets [ZIP 1244 §Vote Configuration Format](https://github.com/zcash/zips/pull/1244).
+This repo serves two configuration documents:
 
-## Schema
+| URL | Schema | Status |
+| --- | --- | --- |
+| [`voting-config.json`](https://valargroup.github.io/token-holder-voting-config/voting-config.json) | v1, unsigned | Frozen for backwards compatibility with installed wallets that predate the v2 schema. |
+| [`voting-config-v2.json`](https://valargroup.github.io/token-holder-voting-config/voting-config-v2.json) | v2, per-round signed registry | Active. New wallet releases consume this. |
+
+The v2 schema implements [draft ZIP 1244](https://github.com/zcash/zips/pull/1244) "Shielded Voting Wallet API". The v1 file has no chain of trust; v2 signs each round's election authority public key with an Ed25519 admin key whose public counterpart is bundled in the wallet binary.
+
+## v2 Schema
 
 ```json
 {
   "config_version": 1,
-  "vote_round_id": "<64 lowercase hex chars>",
   "vote_servers": [
-    { "url": "https://...", "label": "primary" }
+    { "url": "https://vote-chain-primary.valargroup.org", "label": "valarg-genesis" }
   ],
   "pir_endpoints": [
-    { "url": "https://...", "label": "PIR primary" }
+    { "url": "https://pir.valargroup.org", "label": "PIR primary" }
   ],
-  "snapshot_height": 2800000,
-  "vote_end_time": 1735689600,
   "supported_versions": {
     "pir": ["v0"],
     "vote_protocol": "v0",
     "tally": "v0",
     "vote_server": "v1"
+  },
+  "rounds": {
+    "<lowercase hex round id, 64 chars>": {
+      "auth_version": 1,
+      "ea_pk": "<base64, 32 bytes>",
+      "signatures": [
+        { "key_id": "valar-2026-q2", "alg": "ed25519", "sig": "<base64, 64 bytes>" }
+      ]
+    }
   }
 }
 ```
 
-| Field | Type | Notes |
-| --- | --- | --- |
-| `config_version` | int | Schema version. Currently `1`. |
-| `vote_round_id` | hex, 64 chars | Must match the chain's active round id. |
-| `vote_servers[]` | `{url, label}` | Chain REST + helper endpoints. Wallets use the first for API traffic; all are used for share submission. |
-| `pir_endpoints[]` | `{url, label}` | Nullifier PIR endpoints. Wallets use the first. |
-| `snapshot_height` | int > 0 | Orchard snapshot height. Multiple of 10. Informational in the config; wallets use chain round data when voting. |
-| `vote_end_time` | uint64 | Unix seconds. Informational in the config; wallets use chain round data when voting. |
-| `supported_versions.pir` | `[string]` | Wallet must support ≥1 listed PIR version. |
-| `supported_versions.{vote_protocol, tally, vote_server}` | string | Wallet must recognize each version. |
+`vote_servers`, `pir_endpoints`, and `supported_versions` are wrapper metadata and are not signed in v1. The signature scope is each round entry's `ea_pk`; for `auth_version: 1`, the signed bytes are exactly the raw 32-byte `ea_pk`. Round identity, title, description, and proposals live on chain.
 
-Round-level title, description, and proposals are **not** part of this config — they live on the chain and wallets read them from the round object directly.
+## Trust Model
 
-## Proposals come from the chain
+Wallets carry the v2 trust anchor in their signed application binary: the URL of `voting-config-v2.json` plus the trusted public keys from `trusted_keys.json`. On boot, a wallet fetches the config, validates the wrapper, and authenticates each round it interacts with by checking:
 
-The chain stores the authoritative proposal list on `VoteRound.proposals` and commits to it via `VoteRound.proposals_hash`. Wallets fetch proposal titles, descriptions, and options from chain REST endpoints such as `/shielded-vote/v1/rounds` and `/shielded-vote/v1/round/{round_id}`.
+1. The round exists in `rounds`.
+2. The round entry uses a supported `auth_version`.
+3. At least one Ed25519 signature verifies against a bundled trusted key.
+4. The signed `ea_pk` matches the `ea_pk` returned by the chain for that round.
 
-This config only tells wallets which round and service endpoints to use. Updating proposal text means creating or updating the on-chain voting round, not editing `voting-config.json`.
+A signature failure or `ea_pk` mismatch is scoped to that round. Other authenticated rounds remain usable, and an on-chain round missing from `rounds` should be surfaced as unauthenticated.
 
-## Recommended Sequence Flow
+## Operator Participation
 
-```mermaid
-flowchart LR
-  governanceOpen["Governance Screen Reopen"] --> fetchConfig["Fetch GitHub CDN Config"]
-  fetchConfig --> configFields["Config: endpoints, versions, vote_round_id"]
-  configFields --> configureURLs["Configure Vote/PIR URLs"]
-  configureURLs --> queryChain["Query Chain REST API"]
+Bringing a vote server or PIR operator into rotation does not require a wallet release or chain deploy:
 
-  queryChain --> rounds["/shielded-vote/v1/rounds"]
-  queryChain --> roundById["/shielded-vote/v1/round/{round_id}"]
-  queryChain --> tally["/shielded-vote/v1/tally-results/{round_id}"]
+1. Operator joins the chain, using [`vote-sdk`](https://github.com/valargroup/vote-sdk) tooling.
+2. Operator opens a PR adding their entry to `vote_servers` or `pir_endpoints` in `voting-config-v2.json`. They may also update `voting-config.json` if they need visibility to v1 wallets.
+3. CI verifies every v2 round signature against `trusted_keys.json`.
+4. Maintainer reviews and merges. GitHub Pages republishes after the deploy workflow completes.
 
-  rounds --> voteRound["VoteRound On Chain"]
-  roundById --> voteRound
-  tally --> results["Tally Results"]
+Removing an operator or changing an operator URL follows the same PR flow.
 
-  voteRound --> proposals["VoteRound.proposals"]
-  voteRound --> proposalsHash["VoteRound.proposals_hash"]
-  voteRound --> roundMeta["snapshot_height, vote_end_time, ea_pk, status"]
+## Adding or Rotating a Round
 
-  configFields --> bindRound["Check config.vote_round_id exists in chain rounds"]
-  voteRound --> bindRound
+A new round entry requires the vote manager to sign the round's public `ea_pk` with an admin Ed25519 key.
 
-  bindRound --> renderUI["Render Governance UI"]
-  proposals --> renderUI
-  roundMeta --> renderUI
-  results --> renderUI
+Preferred path:
 
-  renderUI --> submitVotes["Submit delegation/vote/share requests"]
-  submitVotes --> voteServers["Configured Vote Servers"]
+1. Create the round on chain.
+2. Open the `vote-sdk` admin UI and use the "Sign config entry" page.
+3. Pick the round. The UI requests canonical payload bytes and a transparency hash from `/api/sign-config-entry`.
+4. Sign in the browser with the admin Ed25519 key stored in that browser.
+5. Paste the generated JSON into `voting-config-v2.json#/rounds/<round_id>`.
+6. Include the displayed `signed_payload_hash` in the PR description for reviewer cross-check.
+
+Offline path:
+
+```bash
+curl -fsSL \
+  https://github.com/valargroup/vote-sdk/releases/download/v0.5.51/voting-config-linux-amd64 \
+  -o voting-config
+echo "389d1b23790f6f6d168cc4b37bf3920b08611039f2857d722279807a8eb64835  voting-config" | sha256sum -c -
+chmod +x voting-config
+
+./voting-config sign \
+  --round-id <64-char-lowercase-hex-round-id> \
+  --ea-pk <base64-32-byte-ea-pk> \
+  --signer-id <key_id from trusted_keys.json> \
+  --privkey-file test/valar-test.seed.b64 \
+  --merge voting-config-v2.json
 ```
 
-## CDN
+The CLI preserves existing signatures when merging. Do not stage placeholder `ea_pk` values; wait until the chain has the round id and final `ea_pk`.
 
-Served via GitHub Pages at:
+## Signing Key Custody
 
-`https://valargroup.github.io/token-holder-voting-config/voting-config.json`
+`trusted_keys.json` lists every public key that wallets trust. The file is a JSON array, and each entry is the public side of an admin key that may sign round entries in `voting-config-v2.json`.
 
-Deployments happen automatically on push to `main`.
+The current `trusted_keys.json` includes a development key, `valar-test`. Replace it with a vote-manager-held production key before shipping the v2 URL in a wallet release.
 
-## Adding a server
+Production handover:
 
-Operators join the chain using `join.sh` from [vote-sdk](https://github.com/valargroup/vote-sdk)
-(`join-loop` waits for funding and runs `create-val-tx`). That flow does **not** add
-your REST URL here automatically.
+1. Generate an Ed25519 keypair with `voting-config keygen` on a trusted machine.
+2. Store the base64 seed outside git under the vote manager's custody.
+3. Open a PR replacing `trusted_keys.json` with the new public key and re-signing every entry under the new `key_id`.
+4. Coordinate with the wallet team so the bundled trust anchor mirrors `trusted_keys.json`.
+5. Remove retired keys only after a wallet release has dropped them from its bundled trust anchor.
 
-1. After you are bonded, fork this repo (or push a branch if you have access)
-2. Add your server entry to `vote_servers` in `voting-config.json` (URL + label)
-3. Open a pull request
-4. A maintainer reviews and merges — your server is live within ~30 seconds
+Steady-state rotation follows the same shape: add the new key, sign new or updated rounds with it, ship a wallet trust-anchor update, then remove the retired key after the wallet release.
 
-## Removing a server
+## Local Verification
 
-Same process: open a PR removing the entry.
+Install the pinned verifier from `vote-sdk`, then verify the checked-in config against the checked-in trusted keys:
+
+```bash
+curl -fsSL \
+  https://github.com/valargroup/vote-sdk/releases/download/v0.5.51/voting-config-linux-amd64 \
+  -o voting-config
+echo "389d1b23790f6f6d168cc4b37bf3920b08611039f2857d722279807a8eb64835  voting-config" | sha256sum -c -
+chmod +x voting-config
+
+./voting-config verify --config voting-config-v2.json --keys trusted_keys.json
+```
+
+## CI
+
+Two workflows guard the v2 path:
+
+- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the v2 config, trusted keys, or workflow files. It downloads the pinned `voting-config` binary from the `vote-sdk` GitHub release and runs `voting-config verify`.
+- [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) runs the same verifier before publishing to GitHub Pages. A bad signature blocks deployment.

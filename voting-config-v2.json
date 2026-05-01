@@ -1,0 +1,42 @@
+{
+  "config_version": 1,
+  "vote_servers": [
+    {
+      "url": "https://vote-chain-primary.valargroup.org",
+      "label": "valarg-genesis"
+    },
+    {
+      "url": "https://vote-chain-secondary.valargroup.org",
+      "label": "valarg-secondary"
+    }
+  ],
+  "pir_endpoints": [
+    {
+      "url": "https://pir.valargroup.org",
+      "label": "PIR primary"
+    },
+    {
+      "url": "https://pir-backup.valargroup.org",
+      "label": "PIR backup"
+    }
+  ],
+  "supported_versions": {
+    "pir": ["v0"],
+    "vote_protocol": "v0",
+    "tally": "v0",
+    "vote_server": "v1"
+  },
+  "rounds": {
+    "58d9319ac86933b81769a7c0972444fa39212ad3790646398de6ce6534de2225": {
+      "auth_version": 1,
+      "ea_pk": "N72oXeIF96QwWBtChaCwde3tjTt75ZfAs455V4usYwM=",
+      "signatures": [
+        {
+          "key_id": "valar-test",
+          "alg": "ed25519",
+          "sig": "rnll+KsHIFt73GpyNoWrX57dlcX8hTi8GU5X/xpwg3vcE+jCARUXpD7LsK+OLw6R5q1kU/zccwNgzsmclt4WAg=="
+        }
+      ]
+    }
+  }
+}
