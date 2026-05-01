@@ -80,9 +80,12 @@ Preferred path:
 Offline path:
 
 ```bash
-go install github.com/valargroup/vote-sdk/cmd/voting-config@<pinned-vote-sdk-sha>
+curl -fsSL \
+  https://github.com/valargroup/vote-sdk/releases/download/v0.5.51/voting-config-linux-amd64 \
+  -o voting-config
+chmod +x voting-config
 
-voting-config sign \
+./voting-config sign \
   --round-id <64-char-lowercase-hex-round-id> \
   --ea-pk <base64-32-byte-ea-pk> \
   --signer-id <key_id from trusted_keys.json> \
@@ -113,13 +116,17 @@ Steady-state rotation follows the same shape: add the new key, sign new or updat
 Install the pinned verifier from `vote-sdk`, then verify the checked-in config against the checked-in trusted keys:
 
 ```bash
-go install github.com/valargroup/vote-sdk/cmd/voting-config@<pinned-vote-sdk-sha>
-voting-config verify --config voting-config-v2.json --keys trusted_keys.json
+curl -fsSL \
+  https://github.com/valargroup/vote-sdk/releases/download/v0.5.51/voting-config-linux-amd64 \
+  -o voting-config
+chmod +x voting-config
+
+./voting-config verify --config voting-config-v2.json --keys trusted_keys.json
 ```
 
 ## CI
 
 Two workflows guard the v2 path:
 
-- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the v2 config, trusted keys, or workflow files. It installs `github.com/valargroup/vote-sdk/cmd/voting-config` at a pinned commit SHA and runs `voting-config verify`.
+- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the v2 config, trusted keys, or workflow files. It downloads the pinned `voting-config` binary from the `vote-sdk` GitHub release and runs `voting-config verify`.
 - [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) runs the same verifier before publishing to GitHub Pages. A bad signature blocks deployment.

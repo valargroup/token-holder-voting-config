@@ -20,8 +20,8 @@ permissions:
   contents: read
 
 env:
-  # Bump to the vote-sdk merge commit that contains cmd/voting-config.
-  VOTE_SDK_REF: 7312dc859278a0a40e4c07e2409dde5ad38baccb
+  VOTE_SDK_TAG: v0.5.51
+  VOTING_CONFIG_ASSET: voting-config-linux-amd64
 
 jobs:
   verify:
@@ -29,12 +29,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.24.x"
-
       - name: Install voting-config verifier
-        run: go install github.com/valargroup/vote-sdk/cmd/voting-config@${VOTE_SDK_REF}
+        run: |
+          mkdir -p "${HOME}/.local/bin"
+          curl -fsSL \
+            "https://github.com/valargroup/vote-sdk/releases/download/${VOTE_SDK_TAG}/${VOTING_CONFIG_ASSET}" \
+            -o "${HOME}/.local/bin/voting-config"
+          chmod +x "${HOME}/.local/bin/voting-config"
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
 
       - name: Verify voting config
         run: voting-config verify --config voting-config-v2.json --keys trusted_keys.json
