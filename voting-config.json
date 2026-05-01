@@ -1,6 +1,6 @@
 {
   "config_version": 1,
-  "vote_round_id": "bf7b601a1b731110d5dad42c6e5124f75f8ec3e93ccae17ab83de31ec7104d38",
+  "vote_round_id": "93d35f8524c2e40cbda4a8e94d7e811548795dcf1262610bbd913c8e7d774f3d",
   "vote_servers": [
     {
       "url": "https://vote-chain-primary.valargroup.org",
@@ -22,7 +22,7 @@
     }
   ],
   "snapshot_height": 3317510,
-  "vote_end_time": 1777598520,
+  "vote_end_time": 1777607820,
   "supported_versions": {
     "pir": ["v0"],
     "vote_protocol": "v0",
