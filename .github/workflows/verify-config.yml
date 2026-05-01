@@ -3,15 +3,15 @@ name: Verify voting config
 on:
   pull_request:
     paths:
-      - "voting-config-v2.json"
-      - "trusted_keys.json"
+      - "dynamic-voting-config.json"
+      - "static-voting-config-sample.json"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/deploy-pages.yml"
   push:
     branches: [main]
     paths:
-      - "voting-config-v2.json"
-      - "trusted_keys.json"
+      - "dynamic-voting-config.json"
+      - "static-voting-config-sample.json"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
@@ -20,9 +20,9 @@ permissions:
   contents: read
 
 env:
-  VOTE_SDK_TAG: v0.5.51
+  VOTE_SDK_TAG: v0.5.52
   VOTING_CONFIG_ASSET: voting-config-linux-amd64
-  VOTING_CONFIG_SHA256: 389d1b23790f6f6d168cc4b37bf3920b08611039f2857d722279807a8eb64835
+  VOTING_CONFIG_SHA256: 730173e20fdd84258516f7741ecbe9456db9ea9962483b9c3aa402a31b313ab8
 
 jobs:
   verify:
@@ -40,14 +40,15 @@ jobs:
           chmod +x "${HOME}/.local/bin/voting-config"
           echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
 
-      # This verifies only repository-local, deterministic v2 config rules:
-      # - voting-config-v2.json parses and has the expected wrapper shape
+      # This verifies only repository-local, deterministic config rules:
+      # - dynamic-voting-config.json parses and has the expected wrapper shape
       # - every round id is valid lowercase hex
-      # - trusted_keys.json is a non-empty trusted Ed25519 public-key array
+      # - static-voting-config-sample.json has the expected static config shape
+      #   and a non-empty trusted Ed25519 public-key array
       # - each round entry has at least one signature that verifies over its ea_pk
       #
       # It does not query the chain. Wallets still perform the runtime check that
       # the signed ea_pk in this file matches the ea_pk returned by the chain for
       # the selected round.
       - name: Verify voting config
-        run: voting-config verify --config voting-config-v2.json --keys trusted_keys.json
+        run: voting-config verify --config dynamic-voting-config.json --static-config static-voting-config-sample.json
