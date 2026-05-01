@@ -16,6 +16,7 @@ concurrency:
 env:
   VOTE_SDK_TAG: v0.5.51
   VOTING_CONFIG_ASSET: voting-config-linux-amd64
+  VOTING_CONFIG_SHA256: 389d1b23790f6f6d168cc4b37bf3920b08611039f2857d722279807a8eb64835
 
 jobs:
   deploy:
@@ -31,6 +32,7 @@ jobs:
           curl -fsSL \
             "https://github.com/valargroup/vote-sdk/releases/download/${VOTE_SDK_TAG}/${VOTING_CONFIG_ASSET}" \
             -o "${HOME}/.local/bin/voting-config"
+          echo "${VOTING_CONFIG_SHA256}  ${HOME}/.local/bin/voting-config" | sha256sum -c -
           chmod +x "${HOME}/.local/bin/voting-config"
           echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
       - name: Verify voting config

@@ -83,6 +83,7 @@ Offline path:
 curl -fsSL \
   https://github.com/valargroup/vote-sdk/releases/download/v0.5.51/voting-config-linux-amd64 \
   -o voting-config
+echo "389d1b23790f6f6d168cc4b37bf3920b08611039f2857d722279807a8eb64835  voting-config" | sha256sum -c -
 chmod +x voting-config
 
 ./voting-config sign \
@@ -119,6 +120,7 @@ Install the pinned verifier from `vote-sdk`, then verify the checked-in config a
 curl -fsSL \
   https://github.com/valargroup/vote-sdk/releases/download/v0.5.51/voting-config-linux-amd64 \
   -o voting-config
+echo "389d1b23790f6f6d168cc4b37bf3920b08611039f2857d722279807a8eb64835  voting-config" | sha256sum -c -
 chmod +x voting-config
 
 ./voting-config verify --config voting-config-v2.json --keys trusted_keys.json
