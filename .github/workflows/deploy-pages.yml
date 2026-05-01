@@ -14,9 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  VOTE_SDK_TAG: v0.5.51
+  VOTE_SDK_TAG: v0.5.52
   VOTING_CONFIG_ASSET: voting-config-linux-amd64
-  VOTING_CONFIG_SHA256: 389d1b23790f6f6d168cc4b37bf3920b08611039f2857d722279807a8eb64835
+  VOTING_CONFIG_SHA256: 730173e20fdd84258516f7741ecbe9456db9ea9962483b9c3aa402a31b313ab8
 
 jobs:
   deploy:
@@ -36,7 +36,7 @@ jobs:
           chmod +x "${HOME}/.local/bin/voting-config"
           echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
       - name: Verify voting config
-        run: voting-config verify --config voting-config-v2.json --keys trusted_keys.json
+        run: voting-config verify --config dynamic-voting-config.json --static-config static-voting-config-sample.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
