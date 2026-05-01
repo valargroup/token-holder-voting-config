@@ -40,5 +40,14 @@ jobs:
           chmod +x "${HOME}/.local/bin/voting-config"
           echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
 
+      # This verifies only repository-local, deterministic v2 config rules:
+      # - voting-config-v2.json parses and has the expected wrapper shape
+      # - every round id is valid lowercase hex
+      # - trusted_keys.json is a non-empty trusted Ed25519 public-key array
+      # - each round entry has at least one signature that verifies over its ea_pk
+      #
+      # It does not query the chain. Wallets still perform the runtime check that
+      # the signed ea_pk in this file matches the ea_pk returned by the chain for
+      # the selected round.
       - name: Verify voting config
         run: voting-config verify --config voting-config-v2.json --keys trusted_keys.json
