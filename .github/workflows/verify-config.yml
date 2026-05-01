@@ -1,40 +1,40 @@
-name: Deploy to GitHub Pages
+name: Verify voting config
+
 on:
+  pull_request:
+    paths:
+      - "voting-config-v2.json"
+      - "trusted_keys.json"
+      - ".github/workflows/verify-config.yml"
+      - ".github/workflows/deploy-pages.yml"
   push:
     branches: [main]
+    paths:
+      - "voting-config-v2.json"
+      - "trusted_keys.json"
+      - ".github/workflows/verify-config.yml"
+      - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 env:
   # Bump to the vote-sdk merge commit that contains cmd/voting-config.
   VOTE_SDK_REF: 7312dc859278a0a40e4c07e2409dde5ad38baccb
 
 jobs:
-  deploy:
+  verify:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24.x"
+
       - name: Install voting-config verifier
         run: go install github.com/valargroup/vote-sdk/cmd/voting-config@${VOTE_SDK_REF}
+
       - name: Verify voting config
         run: voting-config verify --config voting-config-v2.json --keys trusted_keys.json
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      - id: deployment
-        uses: actions/deploy-pages@v4
