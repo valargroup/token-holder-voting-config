@@ -1,6 +1,6 @@
 {
   "config_version": 1,
-  "vote_round_id": "2771bf7f23f05ffee61d65b9fbd039b550033899e78a0b343f8928850cf7a305",
+  "vote_round_id": "93d35f8524c2e40cbda4a8e94d7e811548795dcf1262610bbd913c8e7d774f3d",
   "vote_servers": [
     {
       "url": "https://vote-chain-primary.valargroup.org",
