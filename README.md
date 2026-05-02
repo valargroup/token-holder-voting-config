@@ -89,9 +89,9 @@ Bringing a vote server or PIR operator into rotation does not require a chain de
 
 1. Operator joins the chain, using [`vote-sdk`](https://github.com/valargroup/vote-sdk) tooling.
 2. Operator opens a PR adding their entry to `vote_servers` or `pir_endpoints` in `dynamic-voting-config.json`. They may also update `voting-config.json` if they need visibility to v1 wallets.
-3. Update `static-voting-config-sample.json#/dynamic_config_sha256` to the SHA-256 digest of the exact updated `dynamic-voting-config.json` bytes.
-4. CI verifies the dynamic-config pin and every dynamic-config round signature against `static-voting-config-sample.json`'s `trusted_keys`.
-5. Maintainer reviews and merges. GitHub Pages republishes after the deploy workflow completes.
+3. CI refreshes the dynamic-config hash pin in its checkout, then verifies every dynamic-config round signature against `static-voting-config-sample.json`'s `trusted_keys`.
+4. Maintainer reviews and merges.
+5. The deploy workflow commits the updated `static-voting-config-sample.json#/dynamic_config_sha256` on the merged branch before publishing GitHub Pages.
 
 Removing an operator or changing an operator URL follows the same PR flow.
 
@@ -174,5 +174,5 @@ PY
 
 Two workflows guard the dynamic-config path:
 
-- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config sample, or workflow files. It downloads the pinned `voting-config` binary from the `vote-sdk` GitHub release, checks `dynamic_config_sha256`, and runs `voting-config verify`.
-- [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) runs the same checks before publishing to GitHub Pages. A bad pin or signature blocks deployment.
+- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config sample, or workflow files. It refreshes the hash pin in the CI checkout, downloads the pinned `voting-config` binary from the `vote-sdk` GitHub release, checks `dynamic_config_sha256`, and runs `voting-config verify`.
+- [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) updates and commits `static-voting-config-sample.json#/dynamic_config_sha256` when needed, then runs the same checks before publishing to GitHub Pages. A bad signature blocks deployment.
