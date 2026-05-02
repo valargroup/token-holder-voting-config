@@ -121,15 +121,20 @@ Removing an operator or changing an operator URL follows the same PR flow.
 
 ## Adding or Rotating a Round
 
-A new round entry requires the vote manager to sign the round's public `ea_pk` with an admin Ed25519 key.
+A new round entry requires the vote manager to sign the round's public `ea_pk`
+with an admin Ed25519 key. For production, that Ed25519 key is derived from
+the vote manager's Keplr account so there is no separate long-lived admin seed
+to copy between machines.
 
 Preferred path:
 
 1. Create the round on chain.
 2. Open the `vote-sdk` admin UI and use the "Sign config entry" page.
 3. Pick the round. The UI requests canonical payload bytes and a transparency hash from `/api/sign-config-entry`.
-4. Sign in the browser with the admin Ed25519 key stored in that browser.
-5. Paste the generated JSON into `dynamic-voting-config.json#/rounds/<round_id>`.
+4. Connect the vote manager's Keplr wallet, click **Derive signing key**, and
+   confirm Keplr's fixed-purpose `signArbitrary` prompt.
+5. Sign the round with the derived key and paste the generated JSON into
+   `dynamic-voting-config.json#/rounds/<round_id>`.
 6. Include the displayed `signed_payload_hash` in the PR description for reviewer cross-check.
 
 Offline path:
@@ -151,6 +156,28 @@ chmod +x voting-config
 
 The CLI preserves existing signatures when merging. Do not stage placeholder `ea_pk` values; wait until the chain has the round id and final `ea_pk`.
 
+Keplr-compatible offline recovery path:
+
+```bash
+# Produces the same Ed25519 public key as the admin UI would derive from the
+# same Keplr mnemonic, chain id, bech32 prefix, and BIP44 path.
+printf '%s\n' '<vote-manager-keplr-mnemonic>' | ./voting-config config-attestation-keygen \
+  --chain-id <shielded-vote-chain-id> \
+  --mnemonic-stdin \
+  --out ./keplr-derived.seed.b64
+
+./voting-config sign \
+  --round-id <64-char-lowercase-hex-round-id> \
+  --ea-pk <base64-32-byte-ea-pk> \
+  --signer-id keplr:<derived_address_from_config-attestation-keygen> \
+  --privkey-file ./keplr-derived.seed.b64 \
+  --merge dynamic-voting-config.json
+```
+
+`config-attestation-keygen` intentionally requires `--chain-id`; using the wrong chain id
+derives a different Ed25519 key. The default path is Keplr's Cosmos account
+path, `m/44'/118'/0'/0/0`, with `sv` bech32 addresses.
+
 ## Signing Key Custody
 
 `static-voting-config.json` lists every public key that wallets trust under its `trusted_keys` array. Each entry is the public side of an admin key that may sign round entries in `dynamic-voting-config.json`.
@@ -159,13 +186,17 @@ The current static config includes a development key, `valar-test`. Replace it w
 
 Production handover:
 
-1. Generate an Ed25519 keypair with `voting-config keygen` on a trusted machine.
-2. Store the base64 seed outside git under the vote manager's custody.
-3. Open a PR replacing `static-voting-config.json`'s `trusted_keys` with the new public key and re-signing every entry under the new `key_id`.
+1. Open the `vote-sdk` admin UI and connect the vote manager's Keplr wallet.
+2. Click **Derive signing key** and copy the displayed trusted key entry.
+3. Open a PR replacing `static-voting-config.json`'s `trusted_keys` with the derived public key and re-signing every entry under the new `key_id`.
 4. Coordinate with the wallet team so the wallet release pins the deployed `static-voting-config.json` hash.
-5. Remove retired keys only after a wallet release has dropped them from its bundled trust anchor.
+5. Use `voting-config config-attestation-keygen --chain-id <chain> --mnemonic-stdin` only as the offline recovery path; it derives the same public key from the same Keplr mnemonic.
+6. Remove retired keys only after a wallet release has dropped them from its bundled trust anchor.
 
-Steady-state rotation follows the same shape: add the new key, sign new or updated rounds with it, ship a wallet trust-anchor update, then remove the retired key after the wallet release.
+`voting-config keygen` remains available for non-Keplr manager wallets or local
+development, but it is no longer the recommended production handover path.
+
+Steady-state rotation follows the same shape: derive the new Keplr-backed key, sign new or updated rounds with it, ship a wallet trust-anchor update, then remove the retired key after the wallet release.
 
 ## Local Verification
 
