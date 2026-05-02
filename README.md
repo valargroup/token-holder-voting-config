@@ -6,9 +6,9 @@ This repo serves three published configuration documents:
 
 | URL | Schema | Status |
 | --- | --- | --- |
-| [`voting-config.json`](https://valargroup.github.io/token-holder-voting-config/voting-config.json) | v1, unsigned | Frozen for backwards compatibility with installed wallets that predate the v2 schema. |
-| [`dynamic-voting-config.json`](https://valargroup.github.io/token-holder-voting-config/dynamic-voting-config.json) | Dynamic config, per-round signed registry | Active. New wallet releases consume this through their hash-pinned static config. |
-| [`static-voting-config.json`](https://valargroup.github.io/token-holder-voting-config/static-voting-config.json) | Static config | Active. Wallet releases hash-pin this file's bytes; any change requires a coordinated wallet release. See [Hash-pinning and wallet releases](#hash-pinning-and-wallet-releases). |
+| [`voting-config.json`](https://voting.valargroup.org/voting-config.json) | v1, unsigned | Frozen for backwards compatibility with installed wallets that predate the v2 schema. |
+| [`dynamic-voting-config.json`](https://voting.valargroup.org/dynamic-voting-config.json) | Dynamic config, per-round signed registry | Active. New wallet releases consume this through their hash-pinned static config. |
+| [`static-voting-config.json`](https://voting.valargroup.org/static-voting-config.json) | Static config | Active. Wallet releases hash-pin this file's bytes; any change requires a coordinated wallet release. See [Hash-pinning and wallet releases](#hash-pinning-and-wallet-releases). |
 
 The dynamic and static schemas implement [draft ZIP 1244](https://github.com/zcash/zips/pull/1244) "Shielded Voting Wallet API". The v1 file has no chain of trust; the dynamic config signs each round's election authority public key with an Ed25519 admin key whose public counterpart is fetched through the wallet's hash-pinned static config.
 
@@ -52,7 +52,7 @@ file has this shape:
 ```json
 {
   "static_config_version": 1,
-  "dynamic_config_url": "https://valargroup.github.io/token-holder-voting-config/dynamic-voting-config.json",
+  "dynamic_config_url": "https://voting.valargroup.org/dynamic-voting-config.json",
   "trusted_keys": [
     {
       "key_id": "valar-2026-q2",
@@ -66,7 +66,7 @@ file has this shape:
 `trusted_keys` lists the admin Ed25519 public keys that may authenticate
 round entries in `dynamic-voting-config.json`. The static config is
 published at
-`https://valargroup.github.io/token-holder-voting-config/static-voting-config.json`.
+`https://voting.valargroup.org/static-voting-config.json`.
 Wallets bind to a specific byte-for-byte copy by embedding a
 cosmovisor-style `URL?checksum=sha256:HEX` pin in the signed wallet
 binary. Replace the current development key before shipping a production
@@ -98,7 +98,7 @@ Compute a local pin with:
 
 ```bash
 HASH=$(sha256sum static-voting-config.json | awk '{print $1}')
-echo "https://valargroup.github.io/token-holder-voting-config/static-voting-config.json?checksum=sha256:${HASH}"
+echo "https://voting.valargroup.org/static-voting-config.json?checksum=sha256:${HASH}"
 ```
 
 The deploy workflow also writes the canonical pin string to the GitHub
