@@ -21,7 +21,9 @@
     }
   ],
   "supported_versions": {
-    "pir": ["v0"],
+    "pir": [
+      "v0"
+    ],
     "vote_protocol": "v0",
     "tally": "v0",
     "vote_server": "v1"
@@ -35,6 +37,17 @@
           "key_id": "valar-test",
           "alg": "ed25519",
           "sig": "XkepQBlmMKCTOGqSH1cHzFLNuQzoKQSzGUzeOYm5L8lCUYCzRDvg+7I4eF/qNI7hbywfVLfjbJ+6oUOsMukLDA=="
+        }
+      ]
+    },
+    "5d558b4cbc929ebb5b59ef52f040167d870c9c5ffd79150b95ee0b4ac8ad0235": {
+      "auth_version": 1,
+      "ea_pk": "EJlYj4F9ZmeI5cgi8sCS/OxFdL8m0pQam1gUQ45xiwE=",
+      "signatures": [
+        {
+          "key_id": "valar-test",
+          "alg": "ed25519",
+          "sig": "EnhMZ3Nkc2uKNE4wp5W/c/3O/Z3fu4+vYpUDKRuAJYld3E3OJHPytwc3CWYwIDNer5UG1ChVC/nlkJow+KiUDQ=="
         }
       ]
     },
