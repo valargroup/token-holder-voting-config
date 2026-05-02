@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -26,40 +26,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Update dynamic config hash pin
-        run: |
-          python3 - <<'PY'
-          import hashlib
-          import json
-          from pathlib import Path
-
-          dynamic_path = Path("dynamic-voting-config.json")
-          static_path = Path("static-voting-config-sample.json")
-
-          digest = hashlib.sha256(dynamic_path.read_bytes()).hexdigest()
-          static_config = json.loads(static_path.read_text(encoding="utf-8"))
-
-          if static_config.get("dynamic_config_sha256") == digest:
-              raise SystemExit(0)
-
-          static_config["dynamic_config_sha256"] = digest
-          static_path.write_text(
-              json.dumps(static_config, indent=2, ensure_ascii=True) + "\n",
-              encoding="utf-8",
-          )
-          PY
-      - name: Commit updated dynamic config hash pin
-        run: |
-          if git diff --quiet -- static-voting-config-sample.json; then
-            echo "dynamic_config_sha256 already matches dynamic-voting-config.json"
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add static-voting-config-sample.json
-          git commit -m "Update dynamic config hash pin"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
       - name: Install voting-config verifier
         run: |
           mkdir -p "${HOME}/.local/bin"
@@ -71,21 +37,6 @@ jobs:
           echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
       - name: Verify voting config
         run: voting-config verify --config dynamic-voting-config.json --static-config static-voting-config-sample.json
-      - name: Verify dynamic config hash pin
-        run: |
-          python3 - <<'PY'
-          import hashlib
-          import json
-
-          with open("static-voting-config-sample.json", "r", encoding="utf-8") as static_file:
-              expected = json.load(static_file).get("dynamic_config_sha256")
-
-          if expected:
-              with open("dynamic-voting-config.json", "rb") as dynamic_file:
-                  actual = hashlib.sha256(dynamic_file.read()).hexdigest()
-              if actual != expected:
-                  raise SystemExit(f"dynamic_config_sha256 mismatch: expected {expected}, got {actual}")
-          PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
