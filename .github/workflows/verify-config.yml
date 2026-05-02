@@ -52,3 +52,19 @@ jobs:
       # the selected round.
       - name: Verify voting config
         run: voting-config verify --config dynamic-voting-config.json --static-config static-voting-config-sample.json
+
+      - name: Verify dynamic config hash pin
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+
+          with open("static-voting-config-sample.json", "r", encoding="utf-8") as static_file:
+              expected = json.load(static_file).get("dynamic_config_sha256")
+
+          if expected:
+              with open("dynamic-voting-config.json", "rb") as dynamic_file:
+                  actual = hashlib.sha256(dynamic_file.read()).hexdigest()
+              if actual != expected:
+                  raise SystemExit(f"dynamic_config_sha256 mismatch: expected {expected}, got {actual}")
+          PY

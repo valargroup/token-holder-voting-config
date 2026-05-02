@@ -37,6 +37,17 @@
           "sig": "XkepQBlmMKCTOGqSH1cHzFLNuQzoKQSzGUzeOYm5L8lCUYCzRDvg+7I4eF/qNI7hbywfVLfjbJ+6oUOsMukLDA=="
         }
       ]
+    },
+    "d5680ced0ef7811c59fe7b596367b8da780e7f67d2e0240371d17b799fdc8a1b": {
+      "auth_version": 1,
+      "ea_pk": "6as05IVa5T9vvyhUtjdtUhrRArd/51BZWpTW+gd6Si4=",
+      "signatures": [
+        {
+          "key_id": "valar-test",
+          "alg": "ed25519",
+          "sig": "Wt8qlld5AzpqaCROgCranSmIYwYAH0JOTQAkqgxXgmOj+mixBkQQMSGBvMZXjCzMEDhOuwo3fah2waxUR3fTBw=="
+        }
+      ]
     }
   }
 }

@@ -54,6 +54,7 @@ wallets should embed:
 {
   "static_config_version": 1,
   "dynamic_config_url": "https://valargroup.github.io/token-holder-voting-config/dynamic-voting-config.json",
+  "dynamic_config_sha256": "<hex, 32 bytes>",
   "trusted_keys": [
     {
       "key_id": "valar-2026-q2",
@@ -64,8 +65,12 @@ wallets should embed:
 }
 ```
 
-`trusted_keys` lists the admin Ed25519 public keys that may authenticate
-round entries in `dynamic-voting-config.json`.
+`dynamic_config_sha256` is optional in the ZIP, but this repository's
+sample pins the checked-in `dynamic-voting-config.json`. Wallets that
+bundle a pin compute SHA-256 over the exact fetched response body bytes
+and reject the dynamic config if it differs. `trusted_keys` lists the
+admin Ed25519 public keys that may authenticate round entries in
+`dynamic-voting-config.json`.
 
 ## Trust Model
 
@@ -80,12 +85,13 @@ A signature failure or `ea_pk` mismatch is scoped to that round. Other authentic
 
 ## Operator Participation
 
-Bringing a vote server or PIR operator into rotation does not require a wallet release or chain deploy:
+Bringing a vote server or PIR operator into rotation does not require a chain deploy. If a wallet release bundles `dynamic_config_sha256`, the wallet team must also ship an updated static config pin before that wallet will accept the changed dynamic config:
 
 1. Operator joins the chain, using [`vote-sdk`](https://github.com/valargroup/vote-sdk) tooling.
 2. Operator opens a PR adding their entry to `vote_servers` or `pir_endpoints` in `dynamic-voting-config.json`. They may also update `voting-config.json` if they need visibility to v1 wallets.
-3. CI verifies every dynamic-config round signature against `static-voting-config-sample.json`'s `trusted_keys`.
-4. Maintainer reviews and merges. GitHub Pages republishes after the deploy workflow completes.
+3. Update `static-voting-config-sample.json#/dynamic_config_sha256` to the SHA-256 digest of the exact updated `dynamic-voting-config.json` bytes.
+4. CI verifies the dynamic-config pin and every dynamic-config round signature against `static-voting-config-sample.json`'s `trusted_keys`.
+5. Maintainer reviews and merges. GitHub Pages republishes after the deploy workflow completes.
 
 Removing an operator or changing an operator URL follows the same PR flow.
 
@@ -149,11 +155,24 @@ echo "730173e20fdd84258516f7741ecbe9456db9ea9962483b9c3aa402a31b313ab8  voting-c
 chmod +x voting-config
 
 ./voting-config verify --config dynamic-voting-config.json --static-config static-voting-config-sample.json
+python3 - <<'PY'
+import hashlib
+import json
+
+with open("static-voting-config-sample.json", "r", encoding="utf-8") as static_file:
+    expected = json.load(static_file).get("dynamic_config_sha256")
+
+if expected:
+    with open("dynamic-voting-config.json", "rb") as dynamic_file:
+        actual = hashlib.sha256(dynamic_file.read()).hexdigest()
+    if actual != expected:
+        raise SystemExit(f"dynamic_config_sha256 mismatch: expected {expected}, got {actual}")
+PY
 ```
 
 ## CI
 
 Two workflows guard the dynamic-config path:
 
-- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config sample, or workflow files. It downloads the pinned `voting-config` binary from the `vote-sdk` GitHub release and runs `voting-config verify`.
-- [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) runs the same verifier before publishing to GitHub Pages. A bad signature blocks deployment.
+- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config sample, or workflow files. It downloads the pinned `voting-config` binary from the `vote-sdk` GitHub release, checks `dynamic_config_sha256`, and runs `voting-config verify`.
+- [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) runs the same checks before publishing to GitHub Pages. A bad pin or signature blocks deployment.
