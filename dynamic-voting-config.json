@@ -45,7 +45,7 @@
         {
           "key_id": "valar-test",
           "alg": "ed25519",
-          "sig": "Qt8qlld5AzpqaCROgCranSmIYwYAH0JOTQAkqgxXgmOj+mixBkQQMSGBvMZXjCzMEDhOuwo3fah2waxUR3fTBw=="
+          "sig": "Wt8qlld5AzpqaCROgCranSmIYwYAH0JOTQAkqgxXgmOj+mixBkQQMSGBvMZXjCzMEDhOuwo3fah2waxUR3fTBw=="
         }
       ]
     }
