@@ -29,14 +29,14 @@
     "vote_server": "v1"
   },
   "rounds": {
-    "d37f85d48cfeb6a79f867c0fe18f0973f73e515c0eab66967b064e4d5f62db30": {
+    "43de7c74a6dc1d3d9af1969c910ed1f1d984386de2e52526dbed212ebdbd2509": {
       "auth_version": 1,
-      "ea_pk": "adM0fwoDHahIt/helegNI5oYmKpZQ+abWS4qkPrs2Co=",
+      "ea_pk": "dxeJw/PNsQzp1D7E3zxJF2KKu86eFs6kVJQNEmszyA8=",
       "signatures": [
         {
-          "key_id": "valar-test",
+          "key_id": "valar-test-keplr-derived",
           "alg": "ed25519",
-          "sig": "XkepQBlmMKCTOGqSH1cHzFLNuQzoKQSzGUzeOYm5L8lCUYCzRDvg+7I4eF/qNI7hbywfVLfjbJ+6oUOsMukLDA=="
+          "sig": "YePgYxzQDrpBcFZj7Kv2XF2ABmgjv9Dy1UQJpz4mVexgvgAtElRlGpJ2FNWz9YQ1LscXgKt+WGWYZfe1ObLvAg=="
         }
       ]
     },
@@ -48,6 +48,17 @@
           "key_id": "valar-test",
           "alg": "ed25519",
           "sig": "EnhMZ3Nkc2uKNE4wp5W/c/3O/Z3fu4+vYpUDKRuAJYld3E3OJHPytwc3CWYwIDNer5UG1ChVC/nlkJow+KiUDQ=="
+        }
+      ]
+    },
+    "d37f85d48cfeb6a79f867c0fe18f0973f73e515c0eab66967b064e4d5f62db30": {
+      "auth_version": 1,
+      "ea_pk": "adM0fwoDHahIt/helegNI5oYmKpZQ+abWS4qkPrs2Co=",
+      "signatures": [
+        {
+          "key_id": "valar-test",
+          "alg": "ed25519",
+          "sig": "XkepQBlmMKCTOGqSH1cHzFLNuQzoKQSzGUzeOYm5L8lCUYCzRDvg+7I4eF/qNI7hbywfVLfjbJ+6oUOsMukLDA=="
         }
       ]
     },
