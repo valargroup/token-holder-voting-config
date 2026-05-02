@@ -2,16 +2,15 @@
 
 Service discovery and round authentication for shielded voting infrastructure. This repo is published through GitHub Pages so wallets can find vote servers, PIR endpoints, and authenticated round metadata without running their own chain node.
 
-This repo serves two published configuration documents and one sample of
-the wallet-bundled static configuration:
+This repo serves three published configuration documents:
 
 | URL | Schema | Status |
 | --- | --- | --- |
 | [`voting-config.json`](https://valargroup.github.io/token-holder-voting-config/voting-config.json) | v1, unsigned | Frozen for backwards compatibility with installed wallets that predate the v2 schema. |
-| [`dynamic-voting-config.json`](https://valargroup.github.io/token-holder-voting-config/dynamic-voting-config.json) | Dynamic config, per-round signed registry | Active. New wallet releases consume this through their bundled static config. |
-| [`static-voting-config-sample.json`](static-voting-config-sample.json) | Static config sample | Sample of the bundled wallet trust anchor. This file is not itself the wallet trust anchor unless bundled into a signed wallet release. |
+| [`dynamic-voting-config.json`](https://valargroup.github.io/token-holder-voting-config/dynamic-voting-config.json) | Dynamic config, per-round signed registry | Active. New wallet releases consume this through their hash-pinned static config. |
+| [`static-voting-config.json`](https://valargroup.github.io/token-holder-voting-config/static-voting-config.json) | Static config | Active. Wallet releases hash-pin this file's bytes; any change requires a coordinated wallet release. See [Hash-pinning and wallet releases](#hash-pinning-and-wallet-releases). |
 
-The dynamic and static schemas implement [draft ZIP 1244](https://github.com/zcash/zips/pull/1244) "Shielded Voting Wallet API". The v1 file has no chain of trust; the dynamic config signs each round's election authority public key with an Ed25519 admin key whose public counterpart is bundled in the wallet binary through the static config.
+The dynamic and static schemas implement [draft ZIP 1244](https://github.com/zcash/zips/pull/1244) "Shielded Voting Wallet API". The v1 file has no chain of trust; the dynamic config signs each round's election authority public key with an Ed25519 admin key whose public counterpart is fetched through the wallet's hash-pinned static config.
 
 ## Dynamic Config Schema
 
@@ -46,9 +45,9 @@ The dynamic and static schemas implement [draft ZIP 1244](https://github.com/zca
 
 ## Static Config Schema
 
-Wallet releases bundle a static configuration object into the signed
-application binary. The sample in this repo mirrors the shape that
-wallets should embed:
+Wallet releases embed a hash-pinned URL to the published static
+configuration object in the signed application binary. The published
+file has this shape:
 
 ```json
 {
@@ -65,13 +64,21 @@ wallets should embed:
 ```
 
 `trusted_keys` lists the admin Ed25519 public keys that may authenticate
-round entries in `dynamic-voting-config.json`. The static config itself
-is the wallet's trust anchor and is bundled into the signed application
-binary, so changing it requires a wallet release.
+round entries in `dynamic-voting-config.json`. The static config is
+published at
+`https://valargroup.github.io/token-holder-voting-config/static-voting-config.json`.
+Wallets bind to a specific byte-for-byte copy by embedding a
+cosmovisor-style `URL?checksum=sha256:HEX` pin in the signed wallet
+binary. Replace the current development key before shipping a production
+wallet release.
 
 ## Trust Model
 
-Wallets carry the trust anchor in their signed application binary: the dynamic config URL plus the trusted public keys from the bundled static config. On boot, a wallet fetches the dynamic config, validates the wrapper, and authenticates each round it interacts with by checking:
+Wallets carry a hash-pinned URL string in their signed application binary
+(`URL?checksum=sha256:HEX`). On boot, the wallet fetches the URL, verifies
+the response's SHA-256 matches the embedded hash, and only then trusts the
+file's `dynamic_config_url` and `trusted_keys`. The dynamic config is
+fetched and validated as before; each round is authenticated by checking:
 
 1. The round exists in `rounds`.
 2. The round entry uses a supported `auth_version`.
@@ -80,13 +87,33 @@ Wallets carry the trust anchor in their signed application binary: the dynamic c
 
 A signature failure or `ea_pk` mismatch is scoped to that round. Other authenticated rounds remain usable, and an on-chain round missing from `rounds` should be surfaced as unauthenticated.
 
+## Hash-pinning and wallet releases
+
+Any byte-level change to `static-voting-config.json` invalidates every
+previously shipped wallet binary's pin. Coordinate every change with a
+wallet release: first merge and deploy this repo, then copy the new pin
+string into the wallet release branch.
+
+Compute a local pin with:
+
+```bash
+HASH=$(sha256sum static-voting-config.json | awk '{print $1}')
+echo "https://valargroup.github.io/token-holder-voting-config/static-voting-config.json?checksum=sha256:${HASH}"
+```
+
+The deploy workflow also writes the canonical pin string to the GitHub
+Actions step summary and publishes
+`static-voting-config.json.sha256` beside the config for human
+verification. Wallets must trust the hash embedded in their signed
+binary, not the sidecar file.
+
 ## Operator Participation
 
 Bringing a vote server or PIR operator into rotation does not require a chain deploy or wallet release:
 
 1. Operator joins the chain, using [`vote-sdk`](https://github.com/valargroup/vote-sdk) tooling.
 2. Operator opens a PR adding their entry to `vote_servers` or `pir_endpoints` in `dynamic-voting-config.json`. They may also update `voting-config.json` if they need visibility to v1 wallets.
-3. CI verifies every dynamic-config round signature against `static-voting-config-sample.json`'s `trusted_keys`.
+3. CI verifies every dynamic-config round signature against `static-voting-config.json`'s `trusted_keys`.
 4. Maintainer reviews and merges.
 5. The deploy workflow verifies the config again before publishing GitHub Pages.
 
@@ -117,7 +144,7 @@ chmod +x voting-config
 ./voting-config sign \
   --round-id <64-char-lowercase-hex-round-id> \
   --ea-pk <base64-32-byte-ea-pk> \
-  --signer-id <key_id from static-voting-config-sample.json#/trusted_keys> \
+  --signer-id <key_id from static-voting-config.json#/trusted_keys> \
   --privkey-file test/valar-test.seed.b64 \
   --merge dynamic-voting-config.json
 ```
@@ -126,23 +153,23 @@ The CLI preserves existing signatures when merging. Do not stage placeholder `ea
 
 ## Signing Key Custody
 
-`static-voting-config-sample.json` lists every public key that wallets trust under its `trusted_keys` array. Each entry is the public side of an admin key that may sign round entries in `dynamic-voting-config.json`.
+`static-voting-config.json` lists every public key that wallets trust under its `trusted_keys` array. Each entry is the public side of an admin key that may sign round entries in `dynamic-voting-config.json`.
 
-The current sample includes a development key, `valar-test`. Replace it with a vote-manager-held production key before shipping the dynamic config URL in a wallet release.
+The current static config includes a development key, `valar-test`. Replace it with a vote-manager-held production key before shipping the pinned static config URL in a wallet release.
 
 Production handover:
 
 1. Generate an Ed25519 keypair with `voting-config keygen` on a trusted machine.
 2. Store the base64 seed outside git under the vote manager's custody.
-3. Open a PR replacing `static-voting-config-sample.json`'s `trusted_keys` with the new public key and re-signing every entry under the new `key_id`.
-4. Coordinate with the wallet team so the bundled trust anchor mirrors `static-voting-config-sample.json`.
+3. Open a PR replacing `static-voting-config.json`'s `trusted_keys` with the new public key and re-signing every entry under the new `key_id`.
+4. Coordinate with the wallet team so the wallet release pins the deployed `static-voting-config.json` hash.
 5. Remove retired keys only after a wallet release has dropped them from its bundled trust anchor.
 
 Steady-state rotation follows the same shape: add the new key, sign new or updated rounds with it, ship a wallet trust-anchor update, then remove the retired key after the wallet release.
 
 ## Local Verification
 
-Install the pinned verifier from `vote-sdk`, then verify the checked-in dynamic config against the checked-in static config sample:
+Install the pinned verifier from `vote-sdk`, then verify the checked-in dynamic config against the checked-in static config:
 
 ```bash
 curl -fsSL \
@@ -151,12 +178,14 @@ curl -fsSL \
 echo "730173e20fdd84258516f7741ecbe9456db9ea9962483b9c3aa402a31b313ab8  voting-config" | sha256sum -c -
 chmod +x voting-config
 
-./voting-config verify --config dynamic-voting-config.json --static-config static-voting-config-sample.json
+./voting-config verify --config dynamic-voting-config.json --static-config static-voting-config.json
+
+echo "<hex from wallet binary>  static-voting-config.json" | sha256sum -c -
 ```
 
 ## CI
 
 Two workflows guard the dynamic-config path:
 
-- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config sample, or workflow files. It downloads the pinned `voting-config` binary from the `vote-sdk` GitHub release and runs `voting-config verify`.
+- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It downloads the pinned `voting-config` binary from the `vote-sdk` GitHub release and runs `voting-config verify`.
 - [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) runs the same checks before publishing to GitHub Pages. A bad signature blocks deployment.

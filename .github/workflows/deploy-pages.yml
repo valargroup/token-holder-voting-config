@@ -36,7 +36,13 @@ jobs:
           chmod +x "${HOME}/.local/bin/voting-config"
           echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
       - name: Verify voting config
-        run: voting-config verify --config dynamic-voting-config.json --static-config static-voting-config-sample.json
+        run: voting-config verify --config dynamic-voting-config.json --static-config static-voting-config.json
+      - name: Compute and publish static config sha256
+        run: |
+          HASH=$(sha256sum static-voting-config.json | awk '{print $1}')
+          echo "static-voting-config.json sha256: ${HASH}"
+          echo "${HASH}  static-voting-config.json" > static-voting-config.json.sha256
+          echo "PIN_LINE=https://valargroup.github.io/token-holder-voting-config/static-voting-config.json?checksum=sha256:${HASH}" >> "${GITHUB_STEP_SUMMARY}"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

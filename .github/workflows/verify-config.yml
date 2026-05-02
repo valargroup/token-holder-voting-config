@@ -4,14 +4,14 @@ on:
   pull_request:
     paths:
       - "dynamic-voting-config.json"
-      - "static-voting-config-sample.json"
+      - "static-voting-config.json"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/deploy-pages.yml"
   push:
     branches: [main]
     paths:
       - "dynamic-voting-config.json"
-      - "static-voting-config-sample.json"
+      - "static-voting-config.json"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
@@ -43,7 +43,7 @@ jobs:
       # This verifies only repository-local, deterministic config rules:
       # - dynamic-voting-config.json parses and has the expected wrapper shape
       # - every round id is valid lowercase hex
-      # - static-voting-config-sample.json has the expected static config shape
+      # - static-voting-config.json has the expected static config shape
       #   and a non-empty trusted Ed25519 public-key array
       # - each round entry has at least one signature that verifies over its ea_pk
       #
@@ -51,4 +51,4 @@ jobs:
       # the signed ea_pk in this file matches the ea_pk returned by the chain for
       # the selected round.
       - name: Verify voting config
-        run: voting-config verify --config dynamic-voting-config.json --static-config static-voting-config-sample.json
+        run: voting-config verify --config dynamic-voting-config.json --static-config static-voting-config.json
