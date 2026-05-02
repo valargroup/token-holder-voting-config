@@ -42,7 +42,7 @@ jobs:
           HASH=$(sha256sum static-voting-config.json | awk '{print $1}')
           echo "static-voting-config.json sha256: ${HASH}"
           echo "${HASH}  static-voting-config.json" > static-voting-config.json.sha256
-          echo "PIN_LINE=https://valargroup.github.io/token-holder-voting-config/static-voting-config.json?checksum=sha256:${HASH}" >> "${GITHUB_STEP_SUMMARY}"
+          echo "PIN_LINE=https://voting.valargroup.org/static-voting-config.json?checksum=sha256:${HASH}" >> "${GITHUB_STEP_SUMMARY}"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
