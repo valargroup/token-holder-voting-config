@@ -30,6 +30,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Update dynamic config hash pin for verification
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          dynamic_path = Path("dynamic-voting-config.json")
+          static_path = Path("static-voting-config-sample.json")
+
+          static_config = json.loads(static_path.read_text(encoding="utf-8"))
+          static_config["dynamic_config_sha256"] = hashlib.sha256(dynamic_path.read_bytes()).hexdigest()
+          static_path.write_text(
+              json.dumps(static_config, indent=2, ensure_ascii=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
       - name: Install voting-config verifier
         run: |
           mkdir -p "${HOME}/.local/bin"
