@@ -9,6 +9,10 @@
     {
       "url": "https://vote-chain-secondary.valargroup.org",
       "label": "valarg-secondary"
+    },
+    {
+      "url": "https://204-48-22-15.sslip.io",
+      "label": "czar"
     }
   ],
   "pir_endpoints": [
