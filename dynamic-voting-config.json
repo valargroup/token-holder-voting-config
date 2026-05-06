@@ -41,5 +41,16 @@
     "vote_server": "v1"
   },
   "rounds": {
+    "c8768421390bcf6ac62af32fb44d5fe2fc52d95bcd4af2ae4c81f87894905c1a": {
+      "auth_version": 1,
+      "ea_pk": "M1oIhgH3dyJeAqwj+ftMwFV0mwM1pPLyHI9IIDtGkI4=",
+      "signatures": [
+        {
+          "key_id": "valar-test-keplr-derived",
+          "alg": "ed25519",
+          "sig": "YopIWetnLXGxHlWGntT3hqIbVEqr+kQs1dNSetbY6qh2T5Q7NMrOEF7iiIPLfi0tQrFD18FxR6Sb4Z5Cr4+9Ag=="
+        }
+      ]
+    }
   }
 }
