@@ -13,6 +13,10 @@
     {
       "url": "https://204-48-22-15.sslip.io",
       "label": "czar"
+    },
+    {
+      "url":"https://47-6-103-59.sslip.io",
+      "label":"zechub"
     }
   ],
   "pir_endpoints": [
