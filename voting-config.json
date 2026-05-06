@@ -17,6 +17,10 @@
     {
       "url":"https://47-6-103-59.sslip.io",
       "label": "zechub"
+    },
+    {
+      "url": "https://valar.zcash.space",
+      "label": "ruzcash"
     }
   ],
   "pir_endpoints": [
