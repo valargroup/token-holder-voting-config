@@ -72,7 +72,7 @@ cosmovisor-style `URL?checksum=sha256:HEX` pin in the signed wallet
 binary. Replace the current development key before shipping a production
 wallet release.
 
-For testing duplicate static-config fetches, this repo also publishes
+For testing alternative config URLs, we publish a duplicate static config
 `test/static-voting-config-duplicate.json` at
 `https://voting.valargroup.org/test/static-voting-config-duplicate.json`.
 It is intentionally a byte-for-byte duplicate of the active static config
