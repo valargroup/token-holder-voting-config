@@ -8,18 +8,6 @@
     {
       "url": "https://vote-chain-secondary.valargroup.org",
       "label": "valarg-secondary"
-    },
-    {
-      "url": "https://204-48-22-15.sslip.io",
-      "label": "czar"
-    },
-    {
-      "url": "https://161-35-193-147.sslip.io",
-      "label": "roman"
-    },
-    {
-      "url": "https://47-6-103-59.sslip.io",
-      "label": "zechub"
     }
   ],
   "pir_endpoints": [
