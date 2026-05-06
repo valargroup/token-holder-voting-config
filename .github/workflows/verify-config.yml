@@ -5,15 +5,19 @@ on:
     paths:
       - "dynamic-voting-config.json"
       - "static-voting-config.json"
+      - "test/static-voting-config-duplicate.json"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/deploy-pages.yml"
+      - ".github/workflows/deploy-duplicate-static-config.yml"
   push:
     branches: [main]
     paths:
       - "dynamic-voting-config.json"
       - "static-voting-config.json"
+      - "test/static-voting-config-duplicate.json"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/deploy-pages.yml"
+      - ".github/workflows/deploy-duplicate-static-config.yml"
   workflow_dispatch:
 
 permissions:
@@ -52,3 +56,6 @@ jobs:
       # the selected round.
       - name: Verify voting config
         run: voting-config verify --config dynamic-voting-config.json --static-config static-voting-config.json
+
+      - name: Verify duplicate static config
+        run: voting-config verify --config dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json
