@@ -29,6 +29,17 @@
     "vote_server": "v1"
   },
   "rounds": {
+    "125e5475f653b074d5f4c36730852695f356416c2b6c3042516a912e5bffdd11": {
+      "auth_version": 1,
+      "ea_pk": "ZDO758/y4Qc+y1/6cW69MlvY4aZDOEz18znGYUdh6aA=",
+      "signatures": [
+        {
+          "key_id": "valar-test-keplr-derived",
+          "alg": "ed25519",
+          "sig": "3BrsQtxi5ay7/f7DE51zjudvdaXePHCcjZpqr5lb8w73+T4pOv2R9rKMDBa3R4HMVfCTgi2sW2O8TzfTVUY7Cw=="
+        }
+      ]
+    },
     "2c653b090e88308bc894e433df88b730268700d8528967d18dfb2409b7ac8f0f": {
       "auth_version": 1,
       "ea_pk": "HLJbI42/U24tHPeCrkVoTyCSAtPTVHzwxc//Icpqu5s=",
