@@ -2,21 +2,21 @@
   "config_version": 1,
   "vote_servers": [
     {
-      "url": "https://stage.vote-chain-primary.valargroup.org",
+      "url": "https://vote-chain-primary.valargroup.org",
       "label": "valarg-genesis"
     },
     {
-      "url": "https://stage.vote-chain-secondary.valargroup.org",
+      "url": "https://vote-chain-secondary.valargroup.org",
       "label": "valarg-secondary"
     }
   ],
   "pir_endpoints": [
     {
-      "url": "https://stage.pir.valargroup.org",
+      "url": "https://pir.valargroup.org",
       "label": "PIR primary"
     },
     {
-      "url": "https://stage.pir-backup.valargroup.org",
+      "url": "https://pir-backup.valargroup.org",
       "label": "PIR backup"
     }
   ],
