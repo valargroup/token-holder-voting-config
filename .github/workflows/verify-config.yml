@@ -5,6 +5,8 @@ on:
     paths:
       - "dynamic-voting-config.json"
       - "static-voting-config.json"
+      - "prod/dynamic-voting-config.json"
+      - "prod/static-voting-config.json"
       - "stage/dynamic-voting-config.json"
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
@@ -16,6 +18,8 @@ on:
     paths:
       - "dynamic-voting-config.json"
       - "static-voting-config.json"
+      - "prod/dynamic-voting-config.json"
+      - "prod/static-voting-config.json"
       - "stage/dynamic-voting-config.json"
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
@@ -60,6 +64,9 @@ jobs:
       # the selected round.
       - name: Verify voting config
         run: voting-config verify --config dynamic-voting-config.json --static-config static-voting-config.json
+
+      - name: Verify production voting config
+        run: voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
 
       - name: Verify staging voting config
         run: voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json
