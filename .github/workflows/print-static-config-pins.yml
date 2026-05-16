@@ -10,12 +10,6 @@ on:
       - ".github/workflows/print-static-config-pins.yml"
   push:
     branches: [main]
-    paths:
-      - "static-voting-config.json"
-      - "prod/static-voting-config.json"
-      - "stage/static-voting-config.json"
-      - "test/static-voting-config-duplicate.json"
-      - ".github/workflows/print-static-config-pins.yml"
   workflow_dispatch:
 
 permissions:
