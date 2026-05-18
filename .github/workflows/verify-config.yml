@@ -11,6 +11,7 @@ on:
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - ".github/workflows/verify-config.yml"
+      - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
   push:
@@ -24,6 +25,7 @@ on:
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - ".github/workflows/verify-config.yml"
+      - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
   workflow_dispatch:
