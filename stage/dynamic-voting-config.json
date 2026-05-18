@@ -59,11 +59,6 @@
           "key_id": "valar-test-keplr-derived",
           "alg": "ed25519",
           "sig": "PhSDNQ9lt42wRiQ1C1PeriYmBL8VL8mHJWWCPOG+C3HIE4m6zeLzCXW/VeBK3zTAVy+5Jmc6d/y7wh6SNM9nAg=="
-        },
-        {
-          "key_id": "zodl-stage-vote-manager",
-          "alg": "ed25519",
-          "sig": "knq/Z06UipoBXuYxVlwkUENBMWEbGasZJ9ViLTgvz5JCn3sHRumxB8vuFKAvp7iL9o2l3UsFcBc0deDL9SqSDg=="
         }
       ]
     },
