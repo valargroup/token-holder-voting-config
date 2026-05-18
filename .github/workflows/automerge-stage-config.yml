@@ -1,0 +1,152 @@
+name: Automerge staging config PRs
+
+on:
+  workflow_run:
+    workflows: ["Verify voting config"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "Pull request number to validate and merge"
+        required: true
+        type: string
+      dry_run:
+        description: "Validate only; do not merge"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: read
+  statuses: read
+
+concurrency:
+  group: automerge-stage-config-${{ github.event.workflow_run.id || inputs.pr || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  automerge:
+    name: Validate and merge staging config PR
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve pull request
+        id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PR: ${{ inputs.pr }}
+          WORKFLOW_RUN_PULL_REQUESTS: ${{ toJson(github.event.workflow_run.pull_requests) }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            pr="$INPUT_PR"
+          else
+            pr="$(jq -r '.[0].number // empty' <<< "$WORKFLOW_RUN_PULL_REQUESTS")"
+          fi
+
+          if [ -z "$pr" ] || [ "$pr" = "null" ]; then
+            echo "No pull request is associated with this workflow run; skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! [[ "$pr" =~ ^[0-9]+$ ]]; then
+            echo "::error title=Invalid PR input::Expected a numeric pull request number, got '$pr'."
+            exit 1
+          fi
+
+          echo "number=$pr" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Require bot token
+        if: steps.resolve.outputs.skip != 'true'
+        env:
+          CONFIG_PR_GITHUB_TOKEN: ${{ secrets.CONFIG_PR_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CONFIG_PR_GITHUB_TOKEN:-}" ]; then
+            echo "::error title=Missing secret::CONFIG_PR_GITHUB_TOKEN is required so the merge push triggers the Pages deploy workflow."
+            exit 1
+          fi
+
+      - name: Validate pull request shape
+        if: steps.resolve.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CONFIG_PR_GITHUB_TOKEN }}
+          PR: ${{ steps.resolve.outputs.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          gh pr view "$PR" --repo "$REPO" \
+            --json author,baseRefName,body,files,headRefName,isCrossRepository,isDraft,mergeStateStatus,state,url \
+            > pr.json
+
+          jq -e '.state == "OPEN"' pr.json >/dev/null
+          jq -e '.author.login == "valar-bot"' pr.json >/dev/null
+          jq -e '.baseRefName == "main"' pr.json >/dev/null
+          jq -e '.isDraft == false' pr.json >/dev/null
+          jq -e '.isCrossRepository == false' pr.json >/dev/null
+          jq -e '.files | length == 1 and .[0].path == "stage/dynamic-voting-config.json"' pr.json >/dev/null
+
+          head_ref="$(jq -r '.headRefName' pr.json)"
+          if ! [[ "$head_ref" =~ ^config-staging-round-[0-9a-f]+$ ]]; then
+            echo "::error title=Unexpected branch::Expected config-staging-round-* branch, got '$head_ref'."
+            exit 1
+          fi
+
+          body="$(jq -r '.body // ""' pr.json)"
+          if ! grep -Fq "Target file: stage/dynamic-voting-config.json." <<< "$body"; then
+            echo "::error title=Unexpected PR body::Missing staging target-file marker."
+            exit 1
+          fi
+          if ! grep -Fq "CI will verify stage/dynamic-voting-config.json against stage/static-voting-config.json." <<< "$body"; then
+            echo "::error title=Unexpected PR body::Missing staging CI verification marker."
+            exit 1
+          fi
+
+          echo "Validated $(jq -r '.url' pr.json)."
+
+      - name: Wait for checks
+        if: steps.resolve.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CONFIG_PR_GITHUB_TOKEN }}
+          PR: ${{ steps.resolve.outputs.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          timeout 300 gh pr checks "$PR" --repo "$REPO" --watch --fail-fast --interval 10
+
+          checks="$(gh pr checks "$PR" --repo "$REPO" --json bucket,name,state,workflow)"
+          jq -e 'any(.[]; .name == "verify" and .bucket == "pass")' <<< "$checks" >/dev/null
+          jq -e '[.[] | select(.bucket != "pass" and .bucket != "skipping")] | length == 0' <<< "$checks" >/dev/null
+
+          for attempt in $(seq 1 6); do
+            merge_state="$(gh pr view "$PR" --repo "$REPO" --json mergeStateStatus --jq '.mergeStateStatus')"
+            if [ "$merge_state" = "CLEAN" ]; then
+              exit 0
+            fi
+            echo "PR mergeStateStatus is '$merge_state' (attempt ${attempt}/6); waiting..."
+            sleep 10
+          done
+
+          echo "::error title=PR is not cleanly mergeable::mergeStateStatus did not become CLEAN."
+          exit 1
+
+      - name: Merge pull request
+        if: steps.resolve.outputs.skip != 'true' && (github.event_name != 'workflow_dispatch' || inputs.dry_run == false)
+        env:
+          GH_TOKEN: ${{ secrets.CONFIG_PR_GITHUB_TOKEN }}
+          PR: ${{ steps.resolve.outputs.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh pr merge "$PR" --repo "$REPO" --merge --delete-branch
+
+      - name: Dry run complete
+        if: steps.resolve.outputs.skip != 'true' && github.event_name == 'workflow_dispatch' && inputs.dry_run == true
+        run: echo "Dry run passed; PR was not merged."
