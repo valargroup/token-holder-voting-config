@@ -183,6 +183,17 @@
         }
       ]
     },
+    "3575534270a305cc8a75024ee06a1c95dfd48e12412eab605b4b900d0a6efa36": {
+      "auth_version": 1,
+      "ea_pk": "HE1JAhlWfNnsUaY1vOaz7K+trkhGX5OylGGIwd/sv5A=",
+      "signatures": [
+        {
+          "key_id": "valar-test-keplr-derived",
+          "alg": "ed25519",
+          "sig": "rLw7kGceuATuopFVz0n3KU2hFt8NWH0XfUm/TTs1S5PKp6Qu++655zJnz263vgslZnZZjuQBy+SQ20o9pdqODg=="
+        }
+      ]
+    },
     "35919c7b511ca147bd2fc85811ab5fc3f8967be9ccc0ede5420205cf4dd6cb3b": {
       "auth_version": 1,
       "ea_pk": "pQTlaQ8QBddEsnEtk/9ITItRaXwTTgNzuic4mU4AN6s=",
