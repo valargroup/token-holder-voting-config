@@ -40,13 +40,31 @@ jobs:
           chmod +x "${HOME}/.local/bin/voting-config"
           echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
       - name: Verify duplicate static config
-        run: voting-config verify --config dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json
-      - name: Compute and publish duplicate static config sha256
+        run: voting-config verify --config prod/dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json
+      - name: Publish production default aliases
         run: |
-          HASH=$(sha256sum test/static-voting-config-duplicate.json | awk '{print $1}')
-          echo "test/static-voting-config-duplicate.json sha256: ${HASH}"
-          echo "${HASH}  test/static-voting-config-duplicate.json" > test/static-voting-config-duplicate.json.sha256
-          echo "PIN_LINE=https://voting.valargroup.org/test/static-voting-config-duplicate.json?checksum=sha256:${HASH}" >> "${GITHUB_STEP_SUMMARY}"
+          cp prod/dynamic-voting-config.json dynamic-voting-config.json
+          cp prod/static-voting-config.json static-voting-config.json
+      - name: Compute and publish static config sha256 files
+        run: |
+          DEFAULT_HASH=$(sha256sum static-voting-config.json | awk '{print $1}')
+          PROD_HASH=$(sha256sum prod/static-voting-config.json | awk '{print $1}')
+          STAGE_HASH=$(sha256sum stage/static-voting-config.json | awk '{print $1}')
+          DUPLICATE_HASH=$(sha256sum test/static-voting-config-duplicate.json | awk '{print $1}')
+          echo "static-voting-config.json sha256: ${DEFAULT_HASH}"
+          echo "prod/static-voting-config.json sha256: ${PROD_HASH}"
+          echo "stage/static-voting-config.json sha256: ${STAGE_HASH}"
+          echo "test/static-voting-config-duplicate.json sha256: ${DUPLICATE_HASH}"
+          echo "${DEFAULT_HASH}  static-voting-config.json" > static-voting-config.json.sha256
+          echo "${PROD_HASH}  prod/static-voting-config.json" > prod/static-voting-config.json.sha256
+          echo "${STAGE_HASH}  stage/static-voting-config.json" > stage/static-voting-config.json.sha256
+          echo "${DUPLICATE_HASH}  test/static-voting-config-duplicate.json" > test/static-voting-config-duplicate.json.sha256
+          {
+            echo "DEFAULT_PROD_PIN_LINE=https://voting.valargroup.org/static-voting-config.json?checksum=sha256:${DEFAULT_HASH}"
+            echo "PROD_PIN_LINE=https://voting.valargroup.org/prod/static-voting-config.json?checksum=sha256:${PROD_HASH}"
+            echo "STAGE_PIN_LINE=https://voting.valargroup.org/stage/static-voting-config.json?checksum=sha256:${STAGE_HASH}"
+            echo "DUPLICATE_PIN_LINE=https://voting.valargroup.org/test/static-voting-config-duplicate.json?checksum=sha256:${DUPLICATE_HASH}"
+          } >> "${GITHUB_STEP_SUMMARY}"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
