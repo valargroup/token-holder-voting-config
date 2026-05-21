@@ -1,0 +1,62 @@
+{
+  "config_version": 1,
+  "vote_servers": [
+    {
+      "url": "https://prod.vote-chain-primary.valargroup.org",
+      "label": "valarg-genesis"
+    }
+  ],
+  "pir_endpoints": [
+    {
+      "url": "https://prod.pir.valargroup.org",
+      "label": "PIR primary"
+    },
+    {
+      "url": "https://prod.pir-backup.valargroup.org",
+      "label": "PIR backup"
+    }
+  ],
+  "supported_versions": {
+    "pir": [
+      "v0"
+    ],
+    "vote_protocol": "v0",
+    "tally": "v0",
+    "vote_server": "v1"
+  },
+  "rounds": {
+    "31512f6d99ec37a31800148c84262c5eae48a29409c99e4d8902d49bd9584439": {
+      "auth_version": 1,
+      "ea_pk": "IN7fMT9+GAKLMFcW2NnEwKpdbLq3OSu3HvBrpdu1T7c=",
+      "signatures": [
+        {
+          "key_id": "valargroup",
+          "alg": "ed25519",
+          "sig": "0Yxtdg7NWkOPfAhTDFUVCQsjbw7lcNk3qZhHupYtjxMJ3GOixyF7yuIVhpphH4TzQX94TtNiNG5+LBZaTzT5Cw=="
+        }
+      ]
+    },
+    "c8923fab57eb25f2c5cd6a509c307f8e14a9654917d43ad14d16dd0683fc703b": {
+      "auth_version": 1,
+      "ea_pk": "CE7ng8PupvajZLcpJliE3wvRnqXaT6PJEGoJgBLhywM=",
+      "signatures": [
+        {
+          "key_id": "valargroup",
+          "alg": "ed25519",
+          "sig": "uzSVcyP8GuQ/38BfNHHeGxfqzpslQrfVARK0CCTwvDc04KIdfy3qq4gvKMTb3POdfMuplo8pkj82RZgNaBmSCg=="
+        }
+      ]
+    },
+    "e1b75c0981932f961cad1bf77d54bd58b103ee40f7f03ab4e7c0dc6c5b95d611": {
+      "auth_version": 1,
+      "ea_pk": "rF9NMwia+EWJzlctSzs5cfRX42RlTesgtAB1Wdg6jb4=",
+      "signatures": [
+        {
+          "key_id": "valargroup",
+          "alg": "ed25519",
+          "sig": "PKf5YYo0+L4CUtI+YYNpiOH0NZbY4m6/NZ8gVzintLVa62mKaMVuJeghHFbJKaK8atH9dfmmeFKJmNSVI67sAw=="
+        }
+      ]
+    }
+  }
+}

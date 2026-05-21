@@ -5,6 +5,8 @@ on:
     paths:
       - "dynamic-voting-config.json"
       - "static-voting-config.json"
+      - "prod/dynamic-voting-config.json"
+      - "prod/static-voting-config.json"
       - "stage/dynamic-voting-config.json"
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
@@ -17,6 +19,8 @@ on:
     paths:
       - "dynamic-voting-config.json"
       - "static-voting-config.json"
+      - "prod/dynamic-voting-config.json"
+      - "prod/static-voting-config.json"
       - "stage/dynamic-voting-config.json"
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
@@ -60,8 +64,11 @@ jobs:
       # It does not query the chain. Wallets still perform the runtime check that
       # the signed ea_pk in this file matches the ea_pk returned by the chain for
       # the selected round.
-      - name: Verify production voting config
+      - name: Verify root production voting config
         run: voting-config verify --config dynamic-voting-config.json --static-config static-voting-config.json
+
+      - name: Verify prod-folder production voting config
+        run: voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
 
       - name: Verify staging voting config
         run: voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json

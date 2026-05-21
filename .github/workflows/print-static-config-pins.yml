@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "static-voting-config.json"
+      - "prod/static-voting-config.json"
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - ".github/workflows/print-static-config-pins.yml"
@@ -23,6 +24,7 @@ jobs:
       - name: Validate static config JSON
         run: |
           python3 -m json.tool static-voting-config.json >/dev/null
+          python3 -m json.tool prod/static-voting-config.json >/dev/null
           python3 -m json.tool stage/static-voting-config.json >/dev/null
           python3 -m json.tool test/static-voting-config-duplicate.json >/dev/null
 
@@ -30,11 +32,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          prod_hash=$(sha256sum static-voting-config.json | awk '{print $1}')
+          root_prod_hash=$(sha256sum static-voting-config.json | awk '{print $1}')
+          prod_hash=$(sha256sum prod/static-voting-config.json | awk '{print $1}')
           stage_hash=$(sha256sum stage/static-voting-config.json | awk '{print $1}')
           duplicate_hash=$(sha256sum test/static-voting-config-duplicate.json | awk '{print $1}')
 
-          prod_url="https://voting.valargroup.org/static-voting-config.json?checksum=sha256:${prod_hash}"
+          root_prod_url="https://voting.valargroup.org/static-voting-config.json?checksum=sha256:${root_prod_hash}"
+          prod_url="https://voting.valargroup.org/prod/static-voting-config.json?checksum=sha256:${prod_hash}"
           stage_url="https://voting.valargroup.org/stage/static-voting-config.json?checksum=sha256:${stage_hash}"
           duplicate_url="https://voting.valargroup.org/test/static-voting-config-duplicate.json?checksum=sha256:${duplicate_hash}"
 
@@ -43,14 +47,16 @@ jobs:
             echo
             echo "| Environment | URL pin |"
             echo "| --- | --- |"
-            echo "| production | \`${prod_url}\` |"
+            echo "| production root/default | \`${root_prod_url}\` |"
+            echo "| production prod folder | \`${prod_url}\` |"
             echo "| staging | \`${stage_url}\` |"
             echo "| duplicate | \`${duplicate_url}\` |"
             echo
             echo "### Copy/Paste"
             echo
             echo "\`\`\`text"
-            echo "production=${prod_url}"
+            echo "production_root=${root_prod_url}"
+            echo "production_prod_folder=${prod_url}"
             echo "staging=${stage_url}"
             echo "duplicate=${duplicate_url}"
             echo "\`\`\`"
