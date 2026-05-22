@@ -16,7 +16,7 @@
     {
       "url": "https://46-101-137-86.sslip.io",
       "label": "roman"
-     }
+    }
   ],
   "pir_endpoints": [
     {
@@ -37,6 +37,17 @@
     "vote_server": "v1"
   },
   "rounds": {
+    "2151b57857a9222dd833eedb97a8dd2b15835341638181bfaeec46cea7db591d": {
+      "auth_version": 1,
+      "ea_pk": "qV0hbNKk8H62j57gnOOEwsJg/vIN2mYPxaitqe8mpho=",
+      "signatures": [
+        {
+          "key_id": "valargroup",
+          "alg": "ed25519",
+          "sig": "e0eaoXKUVkcQe9lyHJe+op+FWg7bLSZz9tgiqs5dftNX46KVKhPu8PQoTC1xCG81t6XowGMybxd5mHIlIV2TBQ=="
+        }
+      ]
+    },
     "31512f6d99ec37a31800148c84262c5eae48a29409c99e4d8902d49bd9584439": {
       "auth_version": 1,
       "ea_pk": "IN7fMT9+GAKLMFcW2NnEwKpdbLq3OSu3HvBrpdu1T7c=",
