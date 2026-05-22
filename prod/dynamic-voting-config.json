@@ -3,7 +3,7 @@
   "vote_servers": [
     {
       "url": "https://prod.vote-chain-primary.valargroup.org",
-      "label": "valarg-genesis"
+      "label": "valargroup"
     },
     {
       "url": "https://104-248-227-99.sslip.io",
