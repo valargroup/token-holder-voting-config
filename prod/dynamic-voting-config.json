@@ -4,7 +4,19 @@
     {
       "url": "https://prod.vote-chain-primary.valargroup.org",
       "label": "valarg-genesis"
-    }
+    },
+    {
+      "url": "https://104-248-227-99.sslip.io",
+      "label": "cz"
+    },
+    {
+      "url": "https://64-226-125-235.sslip.io",
+      "label": "roman-v2"
+    },
+    {
+      "url": "https://46-101-137-86.sslip.io",
+      "label": "roman"
+     }
   ],
   "pir_endpoints": [
     {
