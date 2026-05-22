@@ -103,6 +103,11 @@
           "key_id": "valar-test-keplr-derived",
           "alg": "ed25519",
           "sig": "XKQGfxuPIsBMZkVTcqx5DrX33eDG7wGTTyRINBbPPFdS+EgQIIz66N3aP++YI1HJVNz6SdzfO+lTiyLkDq18DQ=="
+        },
+        {
+          "key_id": "keplr:sv12u9tmnr6rlfvcu720p4xa3gumkr9yz8la87r8r",
+          "alg": "ed25519",
+          "sig": "Q1UlpgNbaq9c1brtScs06SAVatgRi9SiRJTZ0UrCZDoJcrnmB4z6In5Z8KTLO1kjhYO+9SQsOsYni70YjStUAQ=="
         }
       ]
     },
