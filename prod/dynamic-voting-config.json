@@ -16,6 +16,10 @@
     {
       "url": "https://46-101-137-86.sslip.io",
       "label": "roman"
+    },
+    {
+      "url": "https://ru.zcash.space",
+      "label": "ruzcash"
     }
   ],
   "pir_endpoints": [
