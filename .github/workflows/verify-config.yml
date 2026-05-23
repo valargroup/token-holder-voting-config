@@ -3,8 +3,6 @@ name: Verify voting config
 on:
   pull_request:
     paths:
-      - "dynamic-voting-config.json"
-      - "static-voting-config.json"
       - "prod/dynamic-voting-config.json"
       - "prod/static-voting-config.json"
       - "stage/dynamic-voting-config.json"
@@ -17,8 +15,6 @@ on:
   push:
     branches: [main]
     paths:
-      - "dynamic-voting-config.json"
-      - "static-voting-config.json"
       - "prod/dynamic-voting-config.json"
       - "prod/static-voting-config.json"
       - "stage/dynamic-voting-config.json"
@@ -55,18 +51,15 @@ jobs:
           echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
 
       # This verifies only repository-local, deterministic config rules:
-      # - dynamic-voting-config.json parses and has the expected wrapper shape
+      # - each dynamic config parses and has the expected wrapper shape
       # - every round id is valid lowercase hex
-      # - static-voting-config.json has the expected static config shape
+      # - each static config has the expected static config shape
       #   and a non-empty trusted Ed25519 public-key array
       # - each round entry has at least one signature that verifies over its ea_pk
       #
       # It does not query the chain. Wallets still perform the runtime check that
       # the signed ea_pk in this file matches the ea_pk returned by the chain for
       # the selected round.
-      - name: Verify root production voting config
-        run: voting-config verify --config dynamic-voting-config.json --static-config static-voting-config.json
-
       - name: Verify prod-folder production voting config
         run: voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
 
@@ -74,4 +67,4 @@ jobs:
         run: voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json
 
       - name: Verify duplicate static config
-        run: voting-config verify --config dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json
+        run: voting-config verify --config prod/dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json
