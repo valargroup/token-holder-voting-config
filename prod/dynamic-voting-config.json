@@ -8,6 +8,10 @@
     {
       "url": "https://ru.zcash.space",
       "label": "ruzcash"
+    },
+    {
+      "url":"https://207-180-214-226.sslip.io",
+      "label":"katz"
     }
   ],
   "pir_endpoints": [
