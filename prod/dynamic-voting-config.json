@@ -12,6 +12,10 @@
     {
       "url":"https://147-182-192-212.sslip.io",
       "label":"zend"
+    },
+    {
+      "url": "https://134-209-215-69.sslip.io",
+      "label": "ShieldedLabs-JM"
     }
   ],
   "pir_endpoints": [
