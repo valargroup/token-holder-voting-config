@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths-ignore:
       - "test/static-voting-config-duplicate.json"
+      - "test/prod-static-voting-config-duplicate.json"
+      - "test/stage-static-voting-config-duplicate.json"
       - ".github/workflows/deploy-duplicate-static-config.yml"
   workflow_dispatch:
 
