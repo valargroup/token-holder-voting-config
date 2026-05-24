@@ -10,8 +10,8 @@
       "label": "ruzcash"
     },
     {
-      "url":"https://147-182-192-212.sslip.io",
-      "label":"zend"
+      "url": "https://147-182-192-212.sslip.io",
+      "label": "zend"
     },
     {
       "url": "https://134-209-215-69.sslip.io",
@@ -36,5 +36,17 @@
     "tally": "v0",
     "vote_server": "v1"
   },
-  "rounds": {}
+  "rounds": {
+    "2d247aebae3864e30b4b25ba1df21c425f6de2abf656dbfcd676230ba7e16e14": {
+      "auth_version": 1,
+      "ea_pk": "jifNXKK3/zTipxG2K2uPgHx3QjQ8CrbS9uPluHsuIhQ=",
+      "signatures": [
+        {
+          "key_id": "valargroup",
+          "alg": "ed25519",
+          "sig": "aE5gIhKBI+M20m/2tcw4zQ7f2dOCDE+n1XQP15p76SkzD5dTxQfsK4pcwcDOhV18fZ19JR8ffSRLcudDdB3CCQ=="
+        }
+      ]
+    }
+  }
 }
