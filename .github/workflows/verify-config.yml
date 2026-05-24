@@ -9,7 +9,6 @@ on:
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
-      - "test/stage-static-voting-config-duplicate.json"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
@@ -23,7 +22,6 @@ on:
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
-      - "test/stage-static-voting-config-duplicate.json"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
@@ -73,8 +71,5 @@ jobs:
       - name: Verify production duplicate static config
         run: voting-config verify --config prod/dynamic-voting-config.json --static-config test/prod-static-voting-config-duplicate.json
 
-      - name: Verify legacy production duplicate static config
-        run: voting-config verify --config prod/dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json
-
       - name: Verify staging duplicate static config
-        run: voting-config verify --config stage/dynamic-voting-config.json --static-config test/stage-static-voting-config-duplicate.json
+        run: voting-config verify --config stage/dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json

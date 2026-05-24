@@ -82,10 +82,8 @@ wallet release.
 For testing alternative config URLs, we publish duplicate static configs under
 `test/`. The production duplicate lives at
 `https://voting.valargroup.org/test/prod-static-voting-config-duplicate.json`,
-with the older
-`https://voting.valargroup.org/test/static-voting-config-duplicate.json`
-kept as a production duplicate alias. The staging duplicate lives at
-`https://voting.valargroup.org/test/stage-static-voting-config-duplicate.json`.
+and the staging duplicate lives at
+`https://voting.valargroup.org/test/static-voting-config-duplicate.json`.
 Each file is intentionally a byte-for-byte duplicate of its matching
 environment static config. The separate "Deploy duplicate static configs"
 workflow verifies each duplicate against the matching dynamic config and
