@@ -16,6 +16,10 @@
     {
       "url": "https://134-209-215-69.sslip.io",
       "label": "ShieldedLabs-JM"
+    },
+    {
+      "url": "https://mnval01.zcash.legends.sh",
+      "label": "Legends"
     }
   ],
   "pir_endpoints": [
