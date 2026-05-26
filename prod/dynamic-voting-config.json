@@ -20,6 +20,10 @@
     {
       "url": "https://mnval01.zcash.legends.sh",
       "label": "Legends"
+    },
+    {
+      "url": "https://zvote-1.stardust.rest",
+      "label": "stardust-staking"
     }
   ],
   "pir_endpoints": [
