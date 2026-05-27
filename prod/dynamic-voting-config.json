@@ -34,6 +34,10 @@
     {
       "url": "https://prod.pir-backup.valargroup.org",
       "label": "PIR backup"
+    },
+    {
+      "url": "https://zpir-1.stardust.rest",
+      "label": "stardust-staking"
     }
   ],
   "supported_versions": {
