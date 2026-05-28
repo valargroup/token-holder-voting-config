@@ -24,6 +24,10 @@
     {
       "url": "https://zvote-1.stardust.rest",
       "label": "stardust-staking"
+    },
+    {
+      "url": "https://zvote.zodl.com",
+      "label": "zodl"
     }
   ],
   "pir_endpoints": [
