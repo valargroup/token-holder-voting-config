@@ -24,6 +24,10 @@
     {
       "url": "https://zvote-1.stardust.rest",
       "label": "stardust-staking"
+    },
+    {
+      "url":"https://zecvote.zone",
+      "label":"ZecHub"
     }
   ],
   "pir_endpoints": [
