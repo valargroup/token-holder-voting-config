@@ -26,8 +26,12 @@
       "label": "stardust-staking"
     },
     {
-      "url":"https://zecvote.zone",
-      "label":"ZecHub"
+      "url": "https://zvote.zodl.com",
+      "label": "zodl"
+    },
+    {
+      "url": "https://zecvote.zone",
+      "label": "ZecHub"
     }
   ],
   "pir_endpoints": [
