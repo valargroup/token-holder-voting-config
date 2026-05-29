@@ -21,7 +21,7 @@
       "notes": "Vote-manager Keplr-derived key for ZODL prod vote manager; sv1jpxuakysz65rzg9kn90xg4m4vpyer6np9n7c0t"
     },
     {
-      "key_id": "keplr:sv169hpcstyc9qal5t2hu2y6xlqjjvc303cpdanam",
+      "key_id": "shielded-labs",
       "alg": "ed25519",
       "pubkey": "Lsn7flRsI5udUOwqK8ShWu1+jU08AkP0/ed8ihj46kE=",
       "notes": "derived key for sv169hpcstyc9qal5t2hu2y6xlqjjvc303cpdanam"
