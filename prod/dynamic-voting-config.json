@@ -32,6 +32,10 @@
     {
       "url": "https://zecvote.zone",
       "label": "ZecHub"
+    },
+    {
+      "url":"https://207-180-214-226.sslip.io",
+      "label":"katz"
     }
   ],
   "pir_endpoints": [
