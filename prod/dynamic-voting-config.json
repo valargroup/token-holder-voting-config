@@ -60,31 +60,5 @@
     "tally": "v0",
     "vote_server": "v1"
   },
-  "rounds": {
-    "2d247aebae3864e30b4b25ba1df21c425f6de2abf656dbfcd676230ba7e16e14": {
-      "auth_version": 1,
-      "ea_pk": "jifNXKK3/zTipxG2K2uPgHx3QjQ8CrbS9uPluHsuIhQ=",
-      "signatures": []
-    },
-    "9ad83d6b6630cddefbee0fcd065f78606660f94f9f5e5f0652227a54deca763b": {
-      "auth_version": 1,
-      "ea_pk": "2JHGG2Xj67kqOx/LhYDPpanAhSsjINW5LsYY8Uj5Xz8=",
-      "signatures": []
-    },
-    "9d57c9583125acc5d0663f6dfd1e975e590bae5fe6fa93b7c0469ebfd07b503a": {
-      "auth_version": 1,
-      "ea_pk": "3PZEYDW+6ttprJRQAMeqKpRlu3w+kyFdVVNKTVRV2Rw=",
-      "signatures": []
-    },
-    "df4c0942d387156dfe755b51e3ee077244ccb435bcab941d93fa97a9ba8cfb35": {
-      "auth_version": 1,
-      "ea_pk": "Zs8A7SI8HJXzuAUktO9VuYKp7tEapkjtfSLTcEA3l6s=",
-      "signatures": []
-    },
-    "eef150f1865d71e10508159d1661bcf21c3f89469c44b61668efdcf5b80e4c1f": {
-      "auth_version": 1,
-      "ea_pk": "xhhFe+D/q2q5ohjoThPl9e+mj3NffQyWS6qQOIBwwrg=",
-      "signatures": []
-    }
-  }
+  "rounds": {}
 }
