@@ -34,8 +34,8 @@
       "label": "ZecHub"
     },
     {
-      "url":"https://207-180-214-226.sslip.io",
-      "label":"katz"
+      "url": "https://207-180-214-226.sslip.io",
+      "label": "katz"
     },
     {
       "url": "https://zvote.keplr.app",
@@ -64,5 +64,17 @@
     "tally": "v0",
     "vote_server": "v1"
   },
-  "rounds": {}
+  "rounds": {
+    "3fda6c83b054e77c637cdb40f77448289742460ff16f0202229af3c00894d71b": {
+      "auth_version": 1,
+      "ea_pk": "vLZJEsvRcqLUY9D1NP+B2AUJbwzucbqa/RFZrgxX248=",
+      "signatures": [
+        {
+          "key_id": "valargroup",
+          "alg": "ed25519",
+          "sig": "TzG8cuMdGDfIu9YUEopwufqsf4ZHh1T2OL8WvS+9odYsLJuAHsvDv48GpwToE5Pz08OBK5pVeqeicOKeOz0BAA=="
+        }
+      ]
+    }
+  }
 }
