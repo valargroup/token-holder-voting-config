@@ -14,10 +14,6 @@
     {
       "url": "https://stage.pir.valargroup.org",
       "label": "PIR primary"
-    },
-    {
-      "url": "https://stage.pir-backup.valargroup.org",
-      "label": "PIR backup"
     }
   ],
   "supported_versions": {
