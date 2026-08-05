@@ -25,6 +25,17 @@
     "vote_server": "v1"
   },
   "rounds": {
+    "0199de7afa96ff1495c4a14920f5e483dbd3f300f6bc685daa58a739f7af9723": {
+      "auth_version": 1,
+      "ea_pk": "Dt+7arVyjr+7AgZJgt3WyO5FZ1TeIgg7EV4upTuVJoI=",
+      "signatures": [
+        {
+          "key_id": "zodl-stage-vote-manager",
+          "alg": "ed25519",
+          "sig": "gOpN7YVJo+DGLaStEbRwZDZiE5nHvV7lCt0Prn3WKiDEaQiqI/eSY8jjaQD/+gqKG1JKjaxLi4ysqMvWCdyvDQ=="
+        }
+      ]
+    },
     "01f6b702558a8b84493cd01a162ccee513f672c5564e119750a9ec231eebae16": {
       "auth_version": 1,
       "ea_pk": "0fwUIpA4Oq88ImoqgAdaVW+tX2L3f8zU4AviTxNRO4g=",
