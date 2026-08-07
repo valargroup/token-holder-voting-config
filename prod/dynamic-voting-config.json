@@ -40,6 +40,10 @@
     {
       "url": "https://zvote.keplr.app",
       "label": "Keplr"
+    },
+    {
+      "url": "https://zvote.zfnd.org",
+      "label": "Zcash Foundation"
     }
   ],
   "pir_endpoints": [
