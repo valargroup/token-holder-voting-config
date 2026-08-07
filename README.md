@@ -27,6 +27,11 @@ The dynamic and static schemas implement [draft ZIP 1244](https://github.com/zca
   "pir_endpoints": [
     { "url": "https://pir.valargroup.org", "label": "PIR primary" }
   ],
+  "pir_layout": {
+    "pir_depth": 19,
+    "tier0_layers": 12,
+    "tier1_layers": 7
+  },
   "supported_versions": {
     "pir": ["v0"],
     "vote_protocol": "v0",
@@ -45,7 +50,7 @@ The dynamic and static schemas implement [draft ZIP 1244](https://github.com/zca
 }
 ```
 
-`vote_servers`, `pir_endpoints`, and `supported_versions` are wrapper metadata and are not signed in v1. The signature scope is each round entry's `ea_pk`; for `auth_version: 1`, the signed bytes are exactly the raw 32-byte `ea_pk`. Round identity, title, description, and proposals live on chain.
+`vote_servers`, `pir_endpoints`, `pir_layout`, and `supported_versions` are wrapper metadata and are not signed in v1. Wallets require `pir_layout` and verify that it matches the layout advertised by the selected PIR server before issuing a private query. The signature scope is each round entry's `ea_pk`; for `auth_version: 1`, the signed bytes are exactly the raw 32-byte `ea_pk`. Round identity, title, description, and proposals live on chain.
 
 ## Static Config Schema
 
