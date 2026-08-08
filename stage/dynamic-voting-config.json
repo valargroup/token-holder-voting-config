@@ -16,11 +16,6 @@
       "label": "PIR primary"
     }
   ],
-  "pir_layout": {
-    "pir_depth": 19,
-    "tier0_layers": 12,
-    "tier1_layers": 7
-  },
   "supported_versions": {
     "pir": [
       "v0"
@@ -2396,6 +2391,17 @@
           "key_id": "valar-test-keplr-derived",
           "alg": "ed25519",
           "sig": "pV1JcE/zXcW3FT7+immTn4aaHuFBg+QiO/4VWlwifnEZQKGh4P96CigrPlcukvHchAnKIWuF005bzOMavCAsCw=="
+        }
+      ]
+    },
+    "eb765624273d5a3bf0740ce01683b07335bbedec403adab63d2037b221d3893d": {
+      "auth_version": 1,
+      "ea_pk": "GzN6Lvqbg+M+s2kH/BXz9Z+fpnJ+83Sv09+AD4qgJD4=",
+      "signatures": [
+        {
+          "key_id": "zodl-stage-vote-manager",
+          "alg": "ed25519",
+          "sig": "oR5NAPcoTcLGHmNfGongiu2hveGyrB3r9hOm9co8f88Bc5hxRTNbm1iyRmmGw8j6RUq3Jgj8DCUBEdSZnHSfBg=="
         }
       ]
     },
