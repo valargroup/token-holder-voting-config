@@ -16,11 +16,6 @@
       "label": "PIR primary"
     }
   ],
-  "pir_layout": {
-    "pir_depth": 19,
-    "tier0_layers": 12,
-    "tier1_layers": 7
-  },
   "supported_versions": {
     "pir": [
       "v0"
@@ -2198,6 +2193,17 @@
           "key_id": "zodl-stage-vote-manager",
           "alg": "ed25519",
           "sig": "i2zbs7wnrWQLILrpTe1IQ+BM/g0XrITvXO5T3TrBO8hzoeH3ahl1+Kt20cvkzImBl0ISxc0UqAMU+GQOQAVWAQ=="
+        }
+      ]
+    },
+    "d6179dbe043c1cdddb83b4c2899cc87116908abab0806744b950b36e46360b33": {
+      "auth_version": 1,
+      "ea_pk": "alEaafri+cyE1hQt/87AVGvwsYNVhg2YCMACMJcp95s=",
+      "signatures": [
+        {
+          "key_id": "zodl-stage-vote-manager",
+          "alg": "ed25519",
+          "sig": "8+0c8In2zqmIZZnMr7MGNA7nqn7Py8WpOb0aVILtdEUNb594+nW6B89soYqjkMigkr1Q2qG6YJuTG2YyN5VICw=="
         }
       ]
     },
