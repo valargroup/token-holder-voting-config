@@ -168,9 +168,9 @@ Offline path:
 
 ```bash
 curl -fsSL \
-  https://github.com/valargroup/vote-sdk/releases/download/v0.5.52/voting-config-linux-amd64 \
+  https://github.com/valargroup/vote-sdk/releases/download/v1.3.0-rc.2/voting-config-linux-amd64 \
   -o voting-config
-echo "730173e20fdd84258516f7741ecbe9456db9ea9962483b9c3aa402a31b313ab8  voting-config" | sha256sum -c -
+echo "40c2be2b97e27f2743f9f34107be7c21d9acd9d918bfda7ce61e0070d2f9fb77  voting-config" | sha256sum -c -
 chmod +x voting-config
 
 ./voting-config sign \
@@ -231,9 +231,9 @@ Install the pinned verifier from `vote-sdk`, then verify the checked-in dynamic 
 
 ```bash
 curl -fsSL \
-  https://github.com/valargroup/vote-sdk/releases/download/v0.5.52/voting-config-linux-amd64 \
+  https://github.com/valargroup/vote-sdk/releases/download/v1.3.0-rc.2/voting-config-linux-amd64 \
   -o voting-config
-echo "730173e20fdd84258516f7741ecbe9456db9ea9962483b9c3aa402a31b313ab8  voting-config" | sha256sum -c -
+echo "40c2be2b97e27f2743f9f34107be7c21d9acd9d918bfda7ce61e0070d2f9fb77  voting-config" | sha256sum -c -
 chmod +x voting-config
 
 ./voting-config verify --config dynamic-voting-config.json --static-config static-voting-config.json
@@ -244,7 +244,8 @@ echo "<hex from wallet binary>  static-voting-config.json" | sha256sum -c -
 
 ## CI
 
-Two workflows guard the dynamic-config path:
+Three workflows guard the dynamic-config path:
 
-- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It downloads the pinned `voting-config` binary from the `vote-sdk` GitHub release and runs `voting-config verify`.
+- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It downloads the checksum-pinned `voting-config` binary from the `vote-sdk` v1.3.0-rc.2 GitHub release and runs `voting-config verify`.
 - [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) runs the same checks before publishing to GitHub Pages. A bad signature blocks deployment.
+- [`deploy-duplicate-static-config.yml`](.github/workflows/deploy-duplicate-static-config.yml) applies the same verifier to the duplicate static-config deployment path.

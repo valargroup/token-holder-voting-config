@@ -32,9 +32,9 @@ permissions:
   contents: read
 
 env:
-  VOTE_SDK_TAG: v0.5.52
+  VOTE_SDK_TAG: v1.3.0-rc.2
   VOTING_CONFIG_ASSET: voting-config-linux-amd64
-  VOTING_CONFIG_SHA256: 730173e20fdd84258516f7741ecbe9456db9ea9962483b9c3aa402a31b313ab8
+  VOTING_CONFIG_SHA256: 40c2be2b97e27f2743f9f34107be7c21d9acd9d918bfda7ce61e0070d2f9fb77
 
 jobs:
   verify:
@@ -57,7 +57,8 @@ jobs:
       # - every round id is valid lowercase hex
       # - each static config has the expected static config shape
       #   and a non-empty trusted Ed25519 public-key array
-      # - each round entry has at least one signature that verifies over its ea_pk
+      # - each round entry has at least one signature that verifies over its
+      #   auth-version-specific payload
       #
       # It does not query the chain. Wallets still perform the runtime check that
       # the signed ea_pk in this file matches the ea_pk returned by the chain for
