@@ -7,7 +7,6 @@ on:
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
       - ".github/workflows/deploy-duplicate-static-config.yml"
-      - ".github/actions/install-voting-config/**"
   workflow_dispatch:
 
 permissions:
@@ -19,6 +18,11 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+env:
+  VOTE_SDK_TAG: v1.3.0-rc.2
+  VOTING_CONFIG_ASSET: voting-config-linux-amd64
+  VOTING_CONFIG_SHA256: 40c2be2b97e27f2743f9f34107be7c21d9acd9d918bfda7ce61e0070d2f9fb77
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -27,7 +31,15 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/install-voting-config
+      - name: Install voting-config verifier
+        run: |
+          mkdir -p "${HOME}/.local/bin"
+          curl -fsSL \
+            "https://github.com/valargroup/vote-sdk/releases/download/${VOTE_SDK_TAG}/${VOTING_CONFIG_ASSET}" \
+            -o "${HOME}/.local/bin/voting-config"
+          echo "${VOTING_CONFIG_SHA256}  ${HOME}/.local/bin/voting-config" | sha256sum -c -
+          chmod +x "${HOME}/.local/bin/voting-config"
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
       - name: Verify production duplicate static config
         run: voting-config verify --config prod/dynamic-voting-config.json --static-config test/prod-static-voting-config-duplicate.json
 

@@ -13,7 +13,6 @@ on:
       - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
-      - ".github/actions/install-voting-config/**"
   push:
     branches: [main]
     paths:
@@ -27,11 +26,15 @@ on:
       - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
-      - ".github/actions/install-voting-config/**"
   workflow_dispatch:
 
 permissions:
   contents: read
+
+env:
+  VOTE_SDK_TAG: v1.3.0-rc.2
+  VOTING_CONFIG_ASSET: voting-config-linux-amd64
+  VOTING_CONFIG_SHA256: 40c2be2b97e27f2743f9f34107be7c21d9acd9d918bfda7ce61e0070d2f9fb77
 
 jobs:
   verify:
@@ -39,7 +42,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/install-voting-config
+      - name: Install voting-config verifier
+        run: |
+          mkdir -p "${HOME}/.local/bin"
+          curl -fsSL \
+            "https://github.com/valargroup/vote-sdk/releases/download/${VOTE_SDK_TAG}/${VOTING_CONFIG_ASSET}" \
+            -o "${HOME}/.local/bin/voting-config"
+          echo "${VOTING_CONFIG_SHA256}  ${HOME}/.local/bin/voting-config" | sha256sum -c -
+          chmod +x "${HOME}/.local/bin/voting-config"
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
 
       # This verifies only repository-local, deterministic config rules:
       # - each dynamic config parses and has the expected wrapper shape

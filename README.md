@@ -167,10 +167,11 @@ Preferred path:
 Offline path:
 
 ```bash
-git clone --filter=blob:none https://github.com/valargroup/vote-sdk.git vote-sdk
-git -C vote-sdk fetch --depth=1 origin a04ca8a853e0e50a7245d0682705d9128155b5b3
-git -C vote-sdk checkout --detach a04ca8a853e0e50a7245d0682705d9128155b5b3
-(cd vote-sdk && GOTOOLCHAIN=local go build -mod=readonly -trimpath -buildvcs=false -o ../voting-config ./cmd/voting-config)
+curl -fsSL \
+  https://github.com/valargroup/vote-sdk/releases/download/v1.3.0-rc.2/voting-config-linux-amd64 \
+  -o voting-config
+echo "40c2be2b97e27f2743f9f34107be7c21d9acd9d918bfda7ce61e0070d2f9fb77  voting-config" | sha256sum -c -
+chmod +x voting-config
 
 ./voting-config sign \
   --round-id <64-char-lowercase-hex-round-id> \
@@ -226,13 +227,14 @@ Steady-state rotation follows the same shape: derive the new Keplr-backed key, s
 
 ## Local Verification
 
-Build the pinned verifier from `vote-sdk` with Go 1.24.3, then verify the checked-in dynamic config against the checked-in static config:
+Install the pinned verifier from `vote-sdk`, then verify the checked-in dynamic config against the checked-in static config:
 
 ```bash
-git clone --filter=blob:none https://github.com/valargroup/vote-sdk.git vote-sdk
-git -C vote-sdk fetch --depth=1 origin a04ca8a853e0e50a7245d0682705d9128155b5b3
-git -C vote-sdk checkout --detach a04ca8a853e0e50a7245d0682705d9128155b5b3
-(cd vote-sdk && GOTOOLCHAIN=local go build -mod=readonly -trimpath -buildvcs=false -o ../voting-config ./cmd/voting-config)
+curl -fsSL \
+  https://github.com/valargroup/vote-sdk/releases/download/v1.3.0-rc.2/voting-config-linux-amd64 \
+  -o voting-config
+echo "40c2be2b97e27f2743f9f34107be7c21d9acd9d918bfda7ce61e0070d2f9fb77  voting-config" | sha256sum -c -
+chmod +x voting-config
 
 ./voting-config verify --config dynamic-voting-config.json --static-config static-voting-config.json
 ./voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
@@ -244,6 +246,6 @@ echo "<hex from wallet binary>  static-voting-config.json" | sha256sum -c -
 
 Three workflows guard the dynamic-config path:
 
-- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It builds `voting-config` from the exact `vote-sdk` v1.3.0-rc.1 source commit and runs `voting-config verify`.
+- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It downloads the checksum-pinned `voting-config` binary from the `vote-sdk` v1.3.0-rc.2 GitHub release and runs `voting-config verify`.
 - [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) runs the same checks before publishing to GitHub Pages. A bad signature blocks deployment.
 - [`deploy-duplicate-static-config.yml`](.github/workflows/deploy-duplicate-static-config.yml) applies the same verifier to the duplicate static-config deployment path.
