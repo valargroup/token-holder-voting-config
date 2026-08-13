@@ -17,11 +17,6 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
-env:
-  VOTE_SDK_TAG: v0.5.52
-  VOTING_CONFIG_ASSET: voting-config-linux-amd64
-  VOTING_CONFIG_SHA256: 730173e20fdd84258516f7741ecbe9456db9ea9962483b9c3aa402a31b313ab8
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -30,15 +25,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install voting-config verifier
-        run: |
-          mkdir -p "${HOME}/.local/bin"
-          curl -fsSL \
-            "https://github.com/valargroup/vote-sdk/releases/download/${VOTE_SDK_TAG}/${VOTING_CONFIG_ASSET}" \
-            -o "${HOME}/.local/bin/voting-config"
-          echo "${VOTING_CONFIG_SHA256}  ${HOME}/.local/bin/voting-config" | sha256sum -c -
-          chmod +x "${HOME}/.local/bin/voting-config"
-          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+      - uses: ./.github/actions/install-voting-config
       - name: Verify prod-folder production voting config
         run: voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
       - name: Verify staging voting config

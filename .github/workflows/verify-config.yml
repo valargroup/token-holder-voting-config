@@ -13,6 +13,7 @@ on:
       - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
+      - ".github/actions/install-voting-config/**"
   push:
     branches: [main]
     paths:
@@ -26,15 +27,11 @@ on:
       - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
+      - ".github/actions/install-voting-config/**"
   workflow_dispatch:
 
 permissions:
   contents: read
-
-env:
-  VOTE_SDK_TAG: v0.5.52
-  VOTING_CONFIG_ASSET: voting-config-linux-amd64
-  VOTING_CONFIG_SHA256: 730173e20fdd84258516f7741ecbe9456db9ea9962483b9c3aa402a31b313ab8
 
 jobs:
   verify:
@@ -42,22 +39,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install voting-config verifier
-        run: |
-          mkdir -p "${HOME}/.local/bin"
-          curl -fsSL \
-            "https://github.com/valargroup/vote-sdk/releases/download/${VOTE_SDK_TAG}/${VOTING_CONFIG_ASSET}" \
-            -o "${HOME}/.local/bin/voting-config"
-          echo "${VOTING_CONFIG_SHA256}  ${HOME}/.local/bin/voting-config" | sha256sum -c -
-          chmod +x "${HOME}/.local/bin/voting-config"
-          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+      - uses: ./.github/actions/install-voting-config
 
       # This verifies only repository-local, deterministic config rules:
       # - each dynamic config parses and has the expected wrapper shape
       # - every round id is valid lowercase hex
       # - each static config has the expected static config shape
       #   and a non-empty trusted Ed25519 public-key array
-      # - each round entry has at least one signature that verifies over its ea_pk
+      # - each round entry has at least one signature that verifies over its
+      #   auth-version-specific payload
       #
       # It does not query the chain. Wallets still perform the runtime check that
       # the signed ea_pk in this file matches the ea_pk returned by the chain for

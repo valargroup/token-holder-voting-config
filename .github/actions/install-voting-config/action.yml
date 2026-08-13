@@ -1,0 +1,45 @@
+name: Install voting-config verifier
+description: Build the verifier from the exact vote-sdk v1.3.0-rc.1 source commit
+
+runs:
+  using: composite
+  steps:
+    - name: Fetch pinned vote-sdk source
+      id: source
+      shell: bash
+      env:
+        VOTE_SDK_COMMIT: a04ca8a853e0e50a7245d0682705d9128155b5b3
+      run: |
+        set -euo pipefail
+        source_dir="$(mktemp -d "${RUNNER_TEMP}/vote-sdk-voting-config.XXXXXX")"
+        git init --quiet "${source_dir}"
+        git -C "${source_dir}" remote add origin https://github.com/valargroup/vote-sdk.git
+        git -C "${source_dir}" fetch --quiet --depth=1 origin "${VOTE_SDK_COMMIT}"
+        git -C "${source_dir}" checkout --quiet --detach FETCH_HEAD
+        test "$(git -C "${source_dir}" rev-parse HEAD)" = "${VOTE_SDK_COMMIT}"
+        echo "path=${source_dir}" >> "${GITHUB_OUTPUT}"
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.24.3
+        cache-dependency-path: ${{ steps.source.outputs.path }}/go.sum
+
+    - name: Build voting-config verifier
+      shell: bash
+      env:
+        SOURCE_DIR: ${{ steps.source.outputs.path }}
+      run: |
+        set -euo pipefail
+        mkdir -p "${HOME}/.local/bin"
+        (
+          cd "${SOURCE_DIR}"
+          GOTOOLCHAIN=local go build \
+            -mod=readonly \
+            -trimpath \
+            -buildvcs=false \
+            -o "${HOME}/.local/bin/voting-config" \
+            ./cmd/voting-config
+        )
+        "${HOME}/.local/bin/voting-config" --help >/dev/null
+        echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
