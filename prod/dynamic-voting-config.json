@@ -44,6 +44,10 @@
     {
       "url": "https://zvote.zfnd.org",
       "label": "ZF"
+    },
+    {
+      "url": "https://v.ombie.cash",
+      "label": "ZombieCash"
     }
   ],
   "pir_endpoints": [
