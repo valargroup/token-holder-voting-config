@@ -199,6 +199,8 @@ header_matches prod/static-voting-config.json cache-control "$static_cache_patte
 header_matches stage/static-voting-config.json cache-control "$static_cache_pattern"
 header_matches "pins/prod/${prod_static_sha256}/static-voting-config.json" \
   cache-control "$immutable_cache_pattern"
+header_matches "pins/stage/${stage_static_sha256}/static-voting-config.json" \
+  cache-control "$immutable_cache_pattern"
 header_matches "pins/test/prod/${prod_duplicate_sha256}/static-voting-config.json" \
   cache-control "$immutable_cache_pattern"
 header_matches "pins/test/stage/${stage_duplicate_sha256}/static-voting-config.json" \
