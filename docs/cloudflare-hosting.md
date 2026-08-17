@@ -5,9 +5,9 @@ durable serving surface. It is a direct-upload destination, not a cache in front
 of GitHub. A request for `voting.valargroup.dev` must not need GitHub or
 `raw.githubusercontent.com` to be reachable.
 
-The Cloudflare workflow and infrastructure are deliberately disabled until the
-exact Cloudflare account, Pages project, and custom domain have been resolved.
-Do not enable or apply them from guessed account identifiers.
+The Cloudflare workflow and infrastructure remain deliberately disabled until
+the scoped credentials, Pages project, and bootstrap deployment are ready. Do
+not enable or apply them from guessed or stale account identifiers.
 
 ## Ownership
 
@@ -18,6 +18,12 @@ Do not enable or apply them from guessed account identifiers.
 | Runtime serving | Cloudflare Pages | Serves stored assets without a request-time GitHub origin. The last successful deployment remains active after a failed upload. |
 | Project and domain | `vote-infrastructure` production Terraform | Owns the Pages project and, only after a separate readiness gate, `voting.valargroup.dev`. |
 | Emergency publication | A scoped operator credential | Used only when GitHub cannot accept the urgent change. The same local commit must be reconciled to `main` after recovery. |
+
+Read-only inspection on 2026-08-17 resolved `valargroup.dev` to the active
+Cloudflare zone in account `152e2a8834283136c2f0575782b1b7aa`. No Pages
+projects exist in that account, and `voting.valargroup.dev` has no DNS record.
+The legacy `valargroup.org` zone is in a different Cloudflare account. Reconfirm
+all of these facts immediately before the first infrastructure apply.
 
 The existing `voting.valargroup.org` CNAME and GitHub Pages site remain a legacy
 mirror. Clients do not select between two mutable origins. Automatic client
@@ -105,15 +111,16 @@ defense and is not the mechanism that removes the GitHub dependency.
 Use two separate infrastructure applies. Review each plan against the exact
 Cloudflare account and `valargroup.dev` zone.
 
-1. Resolve the Cloudflare account ID and confirm that the existing zone ID is in
-   that account. Use an API token scoped only to Pages writes for the account and
-   DNS writes for this zone. List Pages projects first. If the named project
-   already exists, import it into
+1. Reconfirm that `valargroup.dev` is active in account
+   `152e2a8834283136c2f0575782b1b7aa`, that `voting.valargroup.dev` is unused,
+   and that no project with the chosen name exists. Use a dedicated Terraform
+   token scoped to Pages writes for that account and DNS writes for only the
+   `.dev` zone. If the named project already exists, import it into
    `cloudflare_pages_project.voting_config[0]` instead of creating a duplicate.
 2. In `vote-infrastructure/envs/production`, set
-   `create_voting_config_pages = true`, provide `cf_account_id`, and leave
-   `attach_voting_config_pages_domain = false`. Apply this first. It creates the
-   direct-upload project without changing DNS.
+   `create_voting_config_pages = true`, provide `cf_pages_api_token`, confirm
+   `cf_pages_account_id`, and leave `attach_voting_config_pages_domain = false`.
+   Apply this first. It creates the direct-upload project without changing DNS.
 3. Configure the protected GitHub environment
    `cloudflare-pages-production`:
    - variable `CLOUDFLARE_ACCOUNT_ID`
