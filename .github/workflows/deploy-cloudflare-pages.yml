@@ -109,7 +109,7 @@ jobs:
         run: scripts/verify-publication.sh "${CLOUDFLARE_PAGES_CUSTOM_DOMAIN}" _site "${GITHUB_SHA}"
 
       - name: Roll back failed publication
-        if: failure() && steps.publish.outputs.deployed == 'true' && steps.previous.outputs.id != ''
+        if: (failure() || cancelled()) && steps.publish.outputs.deployed == 'true' && steps.previous.outputs.id != ''
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           PREVIOUS_DEPLOYMENT_ID: ${{ steps.previous.outputs.id }}
