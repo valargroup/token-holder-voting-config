@@ -133,29 +133,27 @@ Failure semantics depend on where the job stopped:
 Post-deploy failure requires operator investigation; the workflow does not
 automatically roll back. This keeps rollback out of the publication state
 machine and avoids racing a valid deployment. Disable the repository publisher
-gate while investigating, inspect the Pages deployment history, and either fix
-forward through `main` or roll back the whole deployment in Cloudflare.
+gate while investigating and inspect the live manifest and Pages deployment
+history.
 
-To verify a rollback target:
+Do not use Pages deployment-history rollback. An older artifact does not contain
+pins added by later wallet releases, so restoring it can turn an immutable URL
+into a 404. Roll back through a new reviewed `main` revision instead:
 
-1. Record its `deployment-manifest.json`, including `source_revision` and
-   `published_at`, from the immutable Pages deployment URL.
-2. Check out that exact source revision in a clean worktree.
-3. Rebuild with those values:
+1. Start from the latest `main`, not the historical deployment commit.
+2. Restore the mutable config or publication code to the last known good
+   behavior. Keep every file under `pins/`, including pins introduced by the
+   revision being corrected. A plain revert that deletes a pin is invalid.
+3. Merge the correction through the normal pull request and verification flow.
+4. Re-enable the publisher gate and dispatch the workflow from the corrective
+   `main` revision.
+5. Verify both domains against the new package and confirm every repository pin
+   still returns its expected bytes.
 
-   ```bash
-   rollback_root=$(mktemp -d)
-   SOURCE_REVISION=<source_revision> PUBLISHED_AT=<published_at> \
-     scripts/build-cloudflare-pages.sh "$rollback_root/site"
-   ```
-
-4. Select that deployment in the Pages dashboard or use Cloudflare's documented
-   deployment rollback API.
-5. Run `scripts/verify-publication.sh` against both the Pages origin and custom
-   domain with the rebuilt package and source revision.
-
-Do not switch clients to `.org` as a rollback. Restore or advance the complete
-Cloudflare snapshot.
+This creates a new complete snapshot with the desired older mutable behavior and
+the full current pin set. Do not publish it directly from an operator machine or
+switch clients to `.org`. If GitHub is unavailable, wait for recovery rather
+than bypassing the single-writer model.
 
 ## Monitoring
 
@@ -220,5 +218,4 @@ Cloudflare reference documentation:
 
 - <https://developers.cloudflare.com/pages/get-started/direct-upload/>
 - <https://developers.cloudflare.com/pages/configuration/headers/>
-- <https://developers.cloudflare.com/pages/configuration/rollbacks/>
 - <https://developers.cloudflare.com/pages/configuration/custom-domains/>
