@@ -44,6 +44,17 @@ fi
 
 cd "$repo_root"
 
+pin_base_revision="${PIN_BASE_REVISION:-}"
+if [[ -n "$pin_base_revision" ]]; then
+  git rev-parse --verify "${pin_base_revision}^{commit}" >/dev/null 2>&1 \
+    || fail "PIN_BASE_REVISION is not a commit: ${pin_base_revision}"
+
+  while IFS= read -r prior_pin; do
+    [[ -f "$prior_pin" ]] \
+      || fail "immutable pin from ${pin_base_revision} is missing: ${prior_pin}"
+  done < <(git ls-tree -r --name-only "$pin_base_revision" -- pins | sort)
+fi
+
 public_files=(
   prod/dynamic-voting-config.json
   prod/pir.json

@@ -14,6 +14,7 @@ on:
       - "scripts/build-cloudflare-pages.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
+      - "scripts/tests/**"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
@@ -33,6 +34,7 @@ on:
       - "scripts/build-cloudflare-pages.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
+      - "scripts/tests/**"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
@@ -53,6 +55,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install voting-config verifier
         run: |
@@ -89,7 +93,14 @@ jobs:
 
       - name: Build serving snapshot
         env:
+          PIN_BASE_REVISION: ${{ github.event.pull_request.base.sha || github.event.before || format('{0}^', github.sha) }}
           SOURCE_REVISION: ${{ github.sha }}
           PUBLICATION_MODE: local-test
           PUBLISHED_AT: "2026-08-17T00:00:00Z"
         run: scripts/build-cloudflare-pages.sh "${RUNNER_TEMP}/voting-config-site"
+
+      - name: Test publication scripts
+        run: |
+          for test_script in scripts/tests/*.sh; do
+            bash "$test_script"
+          done
