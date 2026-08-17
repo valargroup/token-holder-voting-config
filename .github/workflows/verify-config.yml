@@ -15,6 +15,7 @@ on:
       - "scripts/build-github-pages.sh"
       - "scripts/require-latest-main.sh"
       - "scripts/require-reconciled-publication.sh"
+      - "scripts/verify-github-pages-legacy.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
       - "scripts/tests/**"
@@ -39,6 +40,7 @@ on:
       - "scripts/build-github-pages.sh"
       - "scripts/require-latest-main.sh"
       - "scripts/require-reconciled-publication.sh"
+      - "scripts/verify-github-pages-legacy.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
       - "scripts/tests/**"
@@ -98,6 +100,9 @@ jobs:
 
       - name: Verify staging duplicate static config
         run: voting-config verify --config stage/dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json
+
+      - name: Verify frozen GitHub Pages static configs
+        run: scripts/verify-github-pages-legacy.sh
 
       - name: Build serving snapshot
         env:

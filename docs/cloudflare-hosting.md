@@ -32,7 +32,10 @@ behavior ambiguous. The controlled `.dev` domain always names Cloudflare Pages.
 The legacy mirror continues publishing current dynamic configs, but its
 previously documented static aliases keep their exact pre-migration bytes and
 checksums. It does not publish the canonical deployment manifest. New wallet
-releases must not pin those mutable `.org` paths.
+releases must not pin those mutable `.org` paths. Before either GitHub Pages
+workflow packages an update, it verifies both dynamic configs against every
+frozen legacy static alias. A key rotation cannot remove the last legacy signer
+until clients pinned to that alias are retired.
 
 ## Consumer migration boundary
 

@@ -13,6 +13,10 @@ fi
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
 
+if [[ "${PUBLICATION_MODE:-automatic}" != "local-test" ]]; then
+  "${script_dir}/verify-github-pages-legacy.sh"
+fi
+
 "${script_dir}/build-cloudflare-pages.sh" "$1"
 output_dir="$(cd "$1" && pwd)"
 
