@@ -146,7 +146,8 @@ Cloudflare account and `valargroup.dev` zone.
 
    ```bash
    bootstrap_root=$(mktemp -d)
-   SOURCE_REVISION=$(git rev-parse HEAD) PUBLICATION_MODE=manual-bootstrap \
+   PIN_BASE_REVISION=origin/main SOURCE_REVISION=$(git rev-parse HEAD) \
+     PUBLICATION_MODE=manual-bootstrap \
      scripts/build-cloudflare-pages.sh "$bootstrap_root/site"
    npx --yes wrangler@4.123.0 pages deploy "$bootstrap_root/site" \
      --project-name "$CLOUDFLARE_PAGES_PROJECT" \
@@ -208,7 +209,8 @@ GitHub outage by itself does not require a republish because Pages continues
 serving the last good snapshot.
 
 1. Start from the source revision named by the live
-   `deployment-manifest.json`.
+   `deployment-manifest.json` and save that exact SHA as
+   `published_revision`.
 2. Make the smallest config change locally and run the same `voting-config
    verify` commands as CI. Obtain the normal maintainer review outside GitHub.
 3. Create a local commit so the emergency deployment has an immutable source
@@ -220,7 +222,8 @@ serving the last good snapshot.
 
 ```bash
 emergency_root=$(mktemp -d)
-SOURCE_REVISION=$(git rev-parse HEAD) PUBLICATION_MODE=manual-emergency \
+PIN_BASE_REVISION="$published_revision" SOURCE_REVISION=$(git rev-parse HEAD) \
+  PUBLICATION_MODE=manual-emergency \
   scripts/build-cloudflare-pages.sh "$emergency_root/site"
 
 npx --yes wrangler@4.123.0 pages deploy "$emergency_root/site" \

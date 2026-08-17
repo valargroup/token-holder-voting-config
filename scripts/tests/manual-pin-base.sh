@@ -10,7 +10,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
 # shellcheck disable=SC1091
 source "${script_dir}/lib/test-helpers.sh"
-test_root="$(make_test_temp_dir source-revision-test)"
+test_root="$(make_test_temp_dir manual-pin-base-test)"
 trap 'rm -rf "$test_root"' EXIT
 test_repo="${test_root}/repo"
 
@@ -24,31 +24,25 @@ git config user.email codex-test@example.invalid
 git add .
 git commit --quiet -m baseline
 head_revision="$(git rev-parse HEAD)"
-wrong_revision="0000000000000000000000000000000000000000"
-
-if [[ "$wrong_revision" == "$head_revision" ]]; then
-  wrong_revision="1111111111111111111111111111111111111111"
-fi
 
 set +e
 build_output="$(
-  PIN_BASE_REVISION="$head_revision" \
-  SOURCE_REVISION="$wrong_revision" \
-  PUBLICATION_MODE=automatic \
+  SOURCE_REVISION="$head_revision" \
+  PUBLICATION_MODE=manual-emergency \
   PUBLISHED_AT=2026-08-17T00:00:00Z \
-    scripts/build-cloudflare-pages.sh "${test_root}/mismatched-site" 2>&1
+    scripts/build-cloudflare-pages.sh "${test_root}/missing-base-site" 2>&1
 )"
 build_status=$?
 set -e
 
-[[ "$build_status" -ne 0 ]] || fail "builder accepted a mismatched source revision"
-grep -F "SOURCE_REVISION must match HEAD (${head_revision})" <<< "$build_output" >/dev/null \
+[[ "$build_status" -ne 0 ]] || fail "manual publication accepted a missing pin base"
+grep -F 'non-test publications require PIN_BASE_REVISION' <<< "$build_output" >/dev/null \
   || fail "builder failed for an unexpected reason: ${build_output}"
 
 PIN_BASE_REVISION="$head_revision" \
 SOURCE_REVISION="$head_revision" \
-PUBLICATION_MODE=automatic \
+PUBLICATION_MODE=manual-emergency \
 PUBLISHED_AT=2026-08-17T00:00:00Z \
-  scripts/build-cloudflare-pages.sh "${test_root}/matching-site" >/dev/null
+  scripts/build-cloudflare-pages.sh "${test_root}/based-site" >/dev/null
 
-printf 'Source revision test passed\n'
+printf 'Manual publication pin base test passed\n'

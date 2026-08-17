@@ -46,7 +46,16 @@ fi
 
 cd "$repo_root"
 
+publication_mode="${PUBLICATION_MODE:-automatic}"
+case "$publication_mode" in
+  automatic|manual-bootstrap|manual-emergency|local-test) ;;
+  *) fail "PUBLICATION_MODE must be automatic, manual-bootstrap, manual-emergency, or local-test" ;;
+esac
+
 pin_base_revision="${PIN_BASE_REVISION:-}"
+if [[ "$publication_mode" != "local-test" && -z "$pin_base_revision" ]]; then
+  fail "non-test publications require PIN_BASE_REVISION"
+fi
 if [[ -n "$pin_base_revision" ]]; then
   git rev-parse --verify "${pin_base_revision}^{commit}" >/dev/null 2>&1 \
     || fail "PIN_BASE_REVISION is not a commit: ${pin_base_revision}"
@@ -145,12 +154,6 @@ write_sidecar test/static-voting-config-duplicate.json
 while IFS= read -r published_pin; do
   write_sidecar "${published_pin#"$output_dir/"}"
 done < <(find "$output_dir/pins" -type f -name 'static-voting-config.json' -print | sort)
-
-publication_mode="${PUBLICATION_MODE:-automatic}"
-case "$publication_mode" in
-  automatic|manual-bootstrap|manual-emergency|local-test) ;;
-  *) fail "PUBLICATION_MODE must be automatic, manual-bootstrap, manual-emergency, or local-test" ;;
-esac
 
 source_revision="${SOURCE_REVISION:-}"
 if [[ -z "$source_revision" ]]; then
