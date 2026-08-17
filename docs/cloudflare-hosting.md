@@ -191,6 +191,12 @@ request. After it merges, the Cloudflare workflow:
 3. Direct-uploads the snapshot to the production branch of the Pages project.
 4. Compares every important served object with the local package.
 
+Immediately before upload, the workflow also reads the manifest from the
+current deployment's immutable Pages URL. Its source revision must be an
+ancestor of the `main` revision being published. This prevents a queued run
+from replacing a manual emergency deployment before that exact emergency
+commit has been reconciled through `main`.
+
 Do not publish individual JSON objects. An upload failure leaves the preceding
 snapshot active and should be treated as a delayed publication, not as permission
 to bypass verification.
@@ -233,6 +239,8 @@ Record the Cloudflare deployment ID and local commit SHA. When GitHub recovers,
 push the exact commit through the normal pull request path. Do not recreate the
 change by hand. If the eventual reviewed result differs, deploy that complete
 snapshot and record which emergency deployment it superseded.
+Automatic publication remains blocked until the live emergency commit is an
+ancestor of `main`.
 
 ## Monitoring
 
