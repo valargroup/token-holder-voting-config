@@ -4,8 +4,10 @@ on:
   pull_request:
     paths:
       - "prod/dynamic-voting-config.json"
+      - "prod/pir.json"
       - "prod/static-voting-config.json"
       - "stage/dynamic-voting-config.json"
+      - "stage/pir.json"
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
@@ -29,8 +31,10 @@ on:
     branches: [main]
     paths:
       - "prod/dynamic-voting-config.json"
+      - "prod/pir.json"
       - "prod/static-voting-config.json"
       - "stage/dynamic-voting-config.json"
+      - "stage/pir.json"
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
