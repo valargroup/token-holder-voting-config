@@ -84,7 +84,8 @@ through `_headers`, complete deployment history, and production rollback:
 2. Requires every static config to point at the matching controlled-domain
    dynamic URL.
 3. Requires a byte-for-byte immutable copy of each current static config under
-   `pins/<environment>/<sha256>/`.
+   `pins/<environment>/<sha256>/`, or `pins/test/<environment>/<sha256>/` for
+   duplicate test configs.
 4. Copies an allowlist of public files. In particular, it cannot publish test
    seed material or repository metadata.
 5. Generates static-config checksum sidecars and a deployment manifest with the

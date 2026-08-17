@@ -167,10 +167,16 @@ paths=(
 
 prod_static_sha256="$(sha256_file "$expected_dir/prod/static-voting-config.json")"
 stage_static_sha256="$(sha256_file "$expected_dir/stage/static-voting-config.json")"
+prod_duplicate_sha256="$(sha256_file "$expected_dir/test/prod-static-voting-config-duplicate.json")"
+stage_duplicate_sha256="$(sha256_file "$expected_dir/test/static-voting-config-duplicate.json")"
 [[ -f "$expected_dir/pins/prod/${prod_static_sha256}/static-voting-config.json" ]] \
   || fail "expected snapshot is missing its current production immutable pin"
 [[ -f "$expected_dir/pins/stage/${stage_static_sha256}/static-voting-config.json" ]] \
   || fail "expected snapshot is missing its current staging immutable pin"
+[[ -f "$expected_dir/pins/test/prod/${prod_duplicate_sha256}/static-voting-config.json" ]] \
+  || fail "expected snapshot is missing its production duplicate immutable pin"
+[[ -f "$expected_dir/pins/test/stage/${stage_duplicate_sha256}/static-voting-config.json" ]] \
+  || fail "expected snapshot is missing its staging duplicate immutable pin"
 
 while IFS= read -r expected_pin; do
   paths+=("${expected_pin#"$expected_dir/"}")
@@ -192,6 +198,10 @@ header_matches deployment-manifest.json cache-control "$short_cache_pattern"
 header_matches prod/static-voting-config.json cache-control "$static_cache_pattern"
 header_matches stage/static-voting-config.json cache-control "$static_cache_pattern"
 header_matches "pins/prod/${prod_static_sha256}/static-voting-config.json" \
+  cache-control "$immutable_cache_pattern"
+header_matches "pins/test/prod/${prod_duplicate_sha256}/static-voting-config.json" \
+  cache-control "$immutable_cache_pattern"
+header_matches "pins/test/stage/${stage_duplicate_sha256}/static-voting-config.json" \
   cache-control "$immutable_cache_pattern"
 header_matches prod/dynamic-voting-config.json access-control-allow-origin \
   '^[[:space:]]*\*[[:space:]]*$'

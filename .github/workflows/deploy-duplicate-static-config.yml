@@ -6,6 +6,7 @@ on:
     paths:
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
+      - "pins/test/**"
       - ".github/workflows/deploy-duplicate-static-config.yml"
   workflow_dispatch:
 
@@ -72,8 +73,8 @@ jobs:
           {
             echo "PROD_PIN_LINE=https://voting.valargroup.dev/pins/prod/${PROD_HASH}/static-voting-config.json?checksum=sha256:${PROD_HASH}"
             echo "STAGE_PIN_LINE=https://voting.valargroup.dev/pins/stage/${STAGE_HASH}/static-voting-config.json?checksum=sha256:${STAGE_HASH}"
-            echo "PROD_DUPLICATE_PIN_LINE=https://voting.valargroup.dev/test/prod-static-voting-config-duplicate.json?checksum=sha256:${PROD_DUPLICATE_HASH}"
-            echo "STAGE_DUPLICATE_PIN_LINE=https://voting.valargroup.dev/test/static-voting-config-duplicate.json?checksum=sha256:${STAGE_DUPLICATE_HASH}"
+            echo "PROD_DUPLICATE_PIN_LINE=https://voting.valargroup.dev/pins/test/prod/${PROD_DUPLICATE_HASH}/static-voting-config.json?checksum=sha256:${PROD_DUPLICATE_HASH}"
+            echo "STAGE_DUPLICATE_PIN_LINE=https://voting.valargroup.dev/pins/test/stage/${STAGE_DUPLICATE_HASH}/static-voting-config.json?checksum=sha256:${STAGE_DUPLICATE_HASH}"
           } >> "${GITHUB_STEP_SUMMARY}"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

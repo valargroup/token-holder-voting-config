@@ -1,0 +1,12 @@
+{
+  "static_config_version": 1,
+  "dynamic_config_url": "https://voting.valargroup.dev/prod/dynamic-voting-config.json",
+  "trusted_keys": [
+    {
+      "key_id": "valargroup",
+      "alg": "ed25519",
+      "pubkey": "8oQiUWq6QDGnAgRw6U3YhnXb6JLFSXauYnWHIFmJRcw=",
+      "notes": "Vote-manager Keplr-derived key for sv1wyf8tuys2ussdqwc6ugnvq0x273j8wq8fm3jrj"
+    }
+  ]
+}

@@ -103,16 +103,20 @@ done
 
 prod_static_sha256="$(sha256_file prod/static-voting-config.json)"
 stage_static_sha256="$(sha256_file stage/static-voting-config.json)"
+prod_duplicate_sha256="$(sha256_file test/prod-static-voting-config-duplicate.json)"
+stage_duplicate_sha256="$(sha256_file test/static-voting-config-duplicate.json)"
 prod_pin="pins/prod/${prod_static_sha256}/static-voting-config.json"
 stage_pin="pins/stage/${stage_static_sha256}/static-voting-config.json"
+prod_duplicate_pin="pins/test/prod/${prod_duplicate_sha256}/static-voting-config.json"
+stage_duplicate_pin="pins/test/stage/${stage_duplicate_sha256}/static-voting-config.json"
 
 pin_count=0
 while IFS= read -r pin; do
-  if ! [[ "$pin" =~ ^pins/(prod|stage)/([0-9a-f]{64})/static-voting-config\.json$ ]]; then
+  if ! [[ "$pin" =~ ^pins/(test/)?(prod|stage)/([0-9a-f]{64})/static-voting-config\.json$ ]]; then
     fail "unexpected immutable pin path: ${pin}"
   fi
-  pin_environment="${BASH_REMATCH[1]}"
-  expected_pin_sha256="${BASH_REMATCH[2]}"
+  pin_environment="${BASH_REMATCH[2]}"
+  expected_pin_sha256="${BASH_REMATCH[3]}"
   [[ "$(sha256_file "$pin")" == "$expected_pin_sha256" ]] \
     || fail "immutable pin bytes do not match its path: ${pin}"
   [[ ! -L "$pin" ]] || fail "immutable pin must be a regular file: ${pin}"
@@ -127,10 +131,16 @@ done < <(find pins -type f -print | sort)
 
 [[ -f "$prod_pin" ]] || fail "add the production static config to ${prod_pin}"
 [[ -f "$stage_pin" ]] || fail "add the staging static config to ${stage_pin}"
+[[ -f "$prod_duplicate_pin" ]] || fail "add the production duplicate static config to ${prod_duplicate_pin}"
+[[ -f "$stage_duplicate_pin" ]] || fail "add the staging duplicate static config to ${stage_duplicate_pin}"
 cmp -s prod/static-voting-config.json "$prod_pin" \
   || fail "${prod_pin} must be byte-for-byte identical to prod/static-voting-config.json"
 cmp -s stage/static-voting-config.json "$stage_pin" \
   || fail "${stage_pin} must be byte-for-byte identical to stage/static-voting-config.json"
+cmp -s test/prod-static-voting-config-duplicate.json "$prod_duplicate_pin" \
+  || fail "${prod_duplicate_pin} must match the production duplicate static config"
+cmp -s test/static-voting-config-duplicate.json "$stage_duplicate_pin" \
+  || fail "${stage_duplicate_pin} must match the staging duplicate static config"
 
 if [[ "$publication_mode" != "local-test" ]]; then
   scripts/verify-static-config-compatibility.sh

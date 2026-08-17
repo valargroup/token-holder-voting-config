@@ -116,6 +116,8 @@ A signature failure or `ea_pk` mismatch is scoped to that round. Other authentic
 Any byte-level change to an environment's `static-voting-config.json`
 invalidates every wallet binary pinned to that file. Each version therefore has
 an immutable copy at `pins/<environment>/<sha256>/static-voting-config.json`.
+Duplicate test configs use the same contract under
+`pins/test/<environment>/<sha256>/static-voting-config.json`.
 The publisher refuses a static-config change unless that immutable copy is
 checked in. Coordinate every production static-config change with a wallet
 release: first merge and deploy this repo, then copy the new immutable pin into

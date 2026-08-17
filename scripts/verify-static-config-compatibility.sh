@@ -27,10 +27,10 @@ voting-config verify \
 
 pin_count=0
 while IFS= read -r pin; do
-  if ! [[ "$pin" =~ ^pins/(prod|stage)/[0-9a-f]{64}/static-voting-config\.json$ ]]; then
+  if ! [[ "$pin" =~ ^pins/(test/)?(prod|stage)/[0-9a-f]{64}/static-voting-config\.json$ ]]; then
     fail "unexpected immutable pin path: ${pin}"
   fi
-  environment_name="${BASH_REMATCH[1]}"
+  environment_name="${BASH_REMATCH[2]}"
   voting-config verify \
     --config "${environment_name}/dynamic-voting-config.json" \
     --static-config "$pin"
