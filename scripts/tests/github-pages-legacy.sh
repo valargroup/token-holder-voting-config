@@ -51,4 +51,9 @@ cmp -s "${repo_root}/prod/dynamic-voting-config.json" \
   "${site_dir}/prod/dynamic-voting-config.json" \
   || fail "legacy mirror did not retain current dynamic config publication"
 
+cname_trigger_count="$(awk '$0 == "      - \"CNAME\"" { count++ } END { print count + 0 }' \
+  "${repo_root}/.github/workflows/verify-config.yml")"
+[[ "$cname_trigger_count" -eq 2 ]] \
+  || fail "verification workflow must include CNAME in pull request and push paths"
+
 printf 'GitHub Pages legacy compatibility test passed\n'
