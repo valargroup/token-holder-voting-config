@@ -28,6 +28,7 @@ stale_marker="${test_root}/served-stale"
 prod_pir_header_marker="${test_root}/served-stale-prod-pir-header"
 stage_pir_header_marker="${test_root}/served-stale-stage-pir-header"
 stage_static_header_marker="${test_root}/served-stale-stage-static-header"
+github_redirect_marker="${test_root}/redirect-through-github"
 SOURCE_REVISION=local-test \
 PUBLICATION_MODE=local-test \
 PUBLISHED_AT=2026-08-17T00:00:00Z \
@@ -36,7 +37,7 @@ PUBLISHED_AT=2026-08-17T00:00:00Z \
 python3 - \
   "$expected_dir" "$port_file" "$stale_marker" \
   "$prod_pir_header_marker" "$stage_pir_header_marker" \
-  "$stage_static_header_marker" <<'PY' &
+  "$stage_static_header_marker" "$github_redirect_marker" <<'PY' &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import sys
@@ -48,6 +49,7 @@ stale_marker = Path(sys.argv[3])
 prod_pir_header_marker = Path(sys.argv[4])
 stage_pir_header_marker = Path(sys.argv[5])
 stage_static_header_marker = Path(sys.argv[6])
+github_redirect_marker = Path(sys.argv[7])
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -68,8 +70,22 @@ class Handler(BaseHTTPRequestHandler):
 
     def respond(self, include_body):
         request_path = urlsplit(self.path).path.lstrip("/")
+        request_host = self.headers.get("Host", "").split(":", 1)[0]
         if request_path == "test/valar-test.seed.b64":
             self.send_response(404)
+            self.end_headers()
+            return
+
+        if (
+            github_redirect_marker.exists()
+            and request_path == "prod/dynamic-voting-config.json"
+            and request_host in {"127.0.0.1", "localhost"}
+        ):
+            self.send_response(302)
+            self.send_header(
+                "Location",
+                f"http://raw.githubusercontent.com:{self.server.server_port}/{request_path}",
+            )
             self.end_headers()
             return
 
@@ -164,5 +180,58 @@ grep -F 'Waiting for header for stage/pir.json:' \
 grep -F 'Waiting for header for stage/static-voting-config.json:' \
   <<< "$verify_output" >/dev/null \
   || fail "verification did not poll the stale staging static cache header"
+
+outage_output="$(
+  VERIFY_CONNECT_TIMEOUT_SECONDS=1 \
+  VERIFY_MAX_TIME_SECONDS=2 \
+  VERIFY_RETRY_COUNT=0 \
+  VERIFY_RETRY_DELAY_SECONDS=0 \
+  VERIFY_RETRY_MAX_TIME_SECONDS=2 \
+  VERIFY_DEADLINE_SECONDS=10 \
+  VERIFY_POLL_INTERVAL_SECONDS=0 \
+    "${repo_root}/scripts/rehearse-github-outage.sh" \
+      "http://127.0.0.1:${port}" "$expected_dir" local-test 2>&1
+)"
+grep -F 'GitHub remained isolated while the Cloudflare snapshot was verified.' \
+  <<< "$outage_output" >/dev/null \
+  || fail "outage rehearsal did not verify the isolated snapshot: ${outage_output}"
+
+curl_home="${test_root}/curl-home"
+mkdir "$curl_home"
+printf 'resolve = "raw.githubusercontent.com:%s:127.0.0.1"\n' "$port" > "${curl_home}/.curlrc"
+touch "$github_redirect_marker"
+
+VERIFY_CONNECT_TIMEOUT_SECONDS=1 \
+VERIFY_MAX_TIME_SECONDS=2 \
+VERIFY_RETRY_COUNT=0 \
+VERIFY_RETRY_DELAY_SECONDS=0 \
+VERIFY_RETRY_MAX_TIME_SECONDS=2 \
+VERIFY_DEADLINE_SECONDS=10 \
+VERIFY_POLL_INTERVAL_SECONDS=0 \
+CURL_HOME="$curl_home" \
+  "${repo_root}/scripts/verify-publication.sh" \
+    "http://127.0.0.1:${port}" "$expected_dir" local-test >/dev/null
+
+set +e
+outage_output="$(
+  VERIFY_CONNECT_TIMEOUT_SECONDS=1 \
+  VERIFY_MAX_TIME_SECONDS=1 \
+  VERIFY_RETRY_COUNT=0 \
+  VERIFY_RETRY_DELAY_SECONDS=0 \
+  VERIFY_RETRY_MAX_TIME_SECONDS=1 \
+  VERIFY_DEADLINE_SECONDS=2 \
+  VERIFY_POLL_INTERVAL_SECONDS=0 \
+  CURL_HOME="$curl_home" \
+    "${repo_root}/scripts/rehearse-github-outage.sh" \
+      "http://127.0.0.1:${port}" "$expected_dir" local-test 2>&1
+)"
+outage_status=$?
+set -e
+
+[[ "$outage_status" -ne 0 ]] \
+  || fail "outage rehearsal followed a redirect through GitHub"
+grep -F 'verification deadline expired while waiting for published bytes for prod/dynamic-voting-config.json' \
+  <<< "$outage_output" >/dev/null \
+  || fail "GitHub-dependent endpoint failed for an unexpected reason: ${outage_output}"
 
 printf 'Publication propagation test passed\n'

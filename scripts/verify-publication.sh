@@ -13,6 +13,7 @@ fi
 command -v curl >/dev/null || fail "curl is required"
 command -v jq >/dev/null || fail "jq is required"
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 base_url="${1%/}"
 expected_dir="$(cd "$2" && pwd)"
 expected_revision="${3:-}"
@@ -27,6 +28,7 @@ retry_delay_seconds="${VERIFY_RETRY_DELAY_SECONDS:-2}"
 retry_max_time_seconds="${VERIFY_RETRY_MAX_TIME_SECONDS:-120}"
 verification_deadline_seconds="${VERIFY_DEADLINE_SECONDS:-180}"
 poll_interval_seconds="${VERIFY_POLL_INTERVAL_SECONDS:-5}"
+github_outage_isolation="${VERIFY_GITHUB_OUTAGE_ISOLATION:-false}"
 
 [[ "$connect_timeout_seconds" =~ ^[1-9][0-9]*$ ]] \
   || fail "VERIFY_CONNECT_TIMEOUT_SECONDS must be a positive integer"
@@ -42,6 +44,18 @@ poll_interval_seconds="${VERIFY_POLL_INTERVAL_SECONDS:-5}"
   || fail "VERIFY_DEADLINE_SECONDS must be a positive integer"
 [[ "$poll_interval_seconds" =~ ^[0-9]+$ ]] \
   || fail "VERIFY_POLL_INTERVAL_SECONDS must be a non-negative integer"
+case "$github_outage_isolation" in
+  true|false) ;;
+  *) fail "VERIFY_GITHUB_OUTAGE_ISOLATION must be true or false" ;;
+esac
+
+curl_network_args=()
+if [[ "$github_outage_isolation" == true ]]; then
+  github_outage_curl_args=()
+  # shellcheck disable=SC1091
+  source "${script_dir}/lib/github-outage-curl.sh"
+  curl_network_args=("${github_outage_curl_args[@]}")
+fi
 
 verification_deadline=$((SECONDS + verification_deadline_seconds))
 
@@ -67,6 +81,7 @@ bounded_curl() {
   fi
 
   curl \
+    "${curl_network_args[@]}" \
     --connect-timeout "$connect_timeout_seconds" \
     --max-time "$request_max_time" \
     --retry "$retry_count" \
