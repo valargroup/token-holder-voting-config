@@ -63,6 +63,8 @@ verify_output="$(
   VERIFY_RETRY_COUNT=0 \
   VERIFY_RETRY_DELAY_SECONDS=0 \
   VERIFY_RETRY_MAX_TIME_SECONDS=1 \
+  VERIFY_DEADLINE_SECONDS=2 \
+  VERIFY_POLL_INTERVAL_SECONDS=0 \
     "${repo_root}/scripts/verify-publication.sh" \
       "http://127.0.0.1:${port}" "$expected_dir" 2>&1
 )"

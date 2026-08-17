@@ -85,6 +85,8 @@ through `_headers`, complete deployment history, and production rollback:
 Cloudflare Pages switches the production alias between versioned deployments.
 The post-deploy check compares every served file with the package, validates the
 source revision and cache headers, and confirms that the test seed returns 404.
+A stale HTTP 200 response is polled until the expected bytes and headers appear
+or the three-minute verification deadline expires.
 A failed build or upload leaves the preceding production deployment active. If
 post-deploy verification fails, the workflow calls the Pages rollback API for
 the production deployment it recorded before upload. The first deployment has

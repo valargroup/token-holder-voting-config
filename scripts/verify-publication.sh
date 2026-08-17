@@ -25,6 +25,8 @@ max_time_seconds="${VERIFY_MAX_TIME_SECONDS:-30}"
 retry_count="${VERIFY_RETRY_COUNT:-8}"
 retry_delay_seconds="${VERIFY_RETRY_DELAY_SECONDS:-2}"
 retry_max_time_seconds="${VERIFY_RETRY_MAX_TIME_SECONDS:-120}"
+verification_deadline_seconds="${VERIFY_DEADLINE_SECONDS:-180}"
+poll_interval_seconds="${VERIFY_POLL_INTERVAL_SECONDS:-5}"
 
 [[ "$connect_timeout_seconds" =~ ^[1-9][0-9]*$ ]] \
   || fail "VERIFY_CONNECT_TIMEOUT_SECONDS must be a positive integer"
@@ -36,6 +38,12 @@ retry_max_time_seconds="${VERIFY_RETRY_MAX_TIME_SECONDS:-120}"
   || fail "VERIFY_RETRY_DELAY_SECONDS must be a non-negative integer"
 [[ "$retry_max_time_seconds" =~ ^[1-9][0-9]*$ ]] \
   || fail "VERIFY_RETRY_MAX_TIME_SECONDS must be a positive integer"
+[[ "$verification_deadline_seconds" =~ ^[1-9][0-9]*$ ]] \
+  || fail "VERIFY_DEADLINE_SECONDS must be a positive integer"
+[[ "$poll_interval_seconds" =~ ^[0-9]+$ ]] \
+  || fail "VERIFY_POLL_INTERVAL_SECONDS must be a non-negative integer"
+
+verification_deadline=$((SECONDS + verification_deadline_seconds))
 
 if command -v sha256sum >/dev/null; then
   sha256_file() { sha256sum "$1" | awk '{print $1}'; }
@@ -46,14 +54,43 @@ else
 fi
 
 bounded_curl() {
+  local remaining_seconds=$((verification_deadline - SECONDS))
+  local request_max_time="$max_time_seconds"
+  local request_retry_max_time="$retry_max_time_seconds"
+
+  (( remaining_seconds > 0 )) || return 28
+  if (( request_max_time > remaining_seconds )); then
+    request_max_time="$remaining_seconds"
+  fi
+  if (( request_retry_max_time > remaining_seconds )); then
+    request_retry_max_time="$remaining_seconds"
+  fi
+
   curl \
     --connect-timeout "$connect_timeout_seconds" \
-    --max-time "$max_time_seconds" \
+    --max-time "$request_max_time" \
     --retry "$retry_count" \
     --retry-delay "$retry_delay_seconds" \
-    --retry-max-time "$retry_max_time_seconds" \
+    --retry-max-time "$request_retry_max_time" \
     --retry-all-errors \
     "$@"
+}
+
+wait_for_expected() {
+  local description="$1"
+  shift
+  local reported_wait=false
+
+  until "$@"; do
+    if (( SECONDS >= verification_deadline )); then
+      fail "verification deadline expired while waiting for ${description}"
+    fi
+    if [[ "$reported_wait" == false ]]; then
+      printf 'Waiting for %s\n' "$description" >&2
+      reported_wait=true
+    fi
+    sleep "$poll_interval_seconds"
+  done
 }
 
 fetch() {
@@ -64,24 +101,33 @@ fetch() {
     --output "$destination"
 }
 
-compare_path() {
+compare_path_once() {
   local path="$1"
   local downloaded
   downloaded="$download_dir/$(printf '%s' "$path" | tr '/' '_')"
+  fetch "$path" "$downloaded" || return 1
+  [[ "$(sha256_file "$expected_dir/$path")" == "$(sha256_file "$downloaded")" ]]
+}
+
+compare_path() {
+  local path="$1"
   [[ -f "$expected_dir/$path" ]] || fail "missing expected file: ${path}"
-  fetch "$path" "$downloaded"
-  if [[ "$(sha256_file "$expected_dir/$path")" != "$(sha256_file "$downloaded")" ]]; then
-    fail "published bytes differ for ${path}"
-  fi
+  wait_for_expected "published bytes for ${path}" compare_path_once "$path"
+}
+
+header_contains_once() {
+  local path="$1"
+  local pattern="$2"
+  local headers
+  headers="$(bounded_curl --fail --silent --show-error --location --head \
+    "${base_url}/${path}?header-check=$(date +%s)" | tr -d '\r')" || return 1
+  grep -Eiq "$pattern" <<< "$headers"
 }
 
 header_contains() {
   local path="$1"
   local pattern="$2"
-  local headers
-  headers="$(bounded_curl --fail --silent --show-error --location --head \
-    "${base_url}/${path}?header-check=$(date +%s)" | tr -d '\r')"
-  grep -Eiq "$pattern" <<< "$headers" || fail "missing expected header for ${path}: ${pattern}"
+  wait_for_expected "header for ${path}: ${pattern}" header_contains_once "$path" "$pattern"
 }
 
 paths=(
@@ -121,7 +167,6 @@ header_contains prod/static-voting-config.json '^cache-control:.*max-age=300.*mu
 header_contains "pins/prod/${prod_static_sha256}/static-voting-config.json" '^cache-control:.*max-age=31536000.*immutable'
 header_contains prod/dynamic-voting-config.json '^access-control-allow-origin:[[:space:]]*\*'
 
-fetch deployment-manifest.json "$download_dir/deployment-manifest.json"
 if [[ -n "$expected_revision" ]]; then
   jq -e --arg expected "$expected_revision" '.source_revision == $expected' \
     "$download_dir/deployment-manifest.json" >/dev/null \
@@ -135,8 +180,13 @@ for env_name in prod stage; do
     || fail "published ${env_name} static config points outside the controlled domain"
 done
 
-seed_status="$(bounded_curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' \
-  "${base_url}/test/valar-test.seed.b64?publication-check=$(date +%s)")"
-[[ "$seed_status" == "404" ]] || fail "test seed must not be published; got HTTP ${seed_status}"
+seed_is_absent() {
+  local seed_status
+  seed_status="$(bounded_curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' \
+    "${base_url}/test/valar-test.seed.b64?publication-check=$(date +%s)")" || return 1
+  [[ "$seed_status" == "404" ]]
+}
+
+wait_for_expected "test seed to return HTTP 404" seed_is_absent
 
 printf 'Verified publication at %s\n' "$base_url"
