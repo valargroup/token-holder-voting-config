@@ -80,6 +80,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           response="$(curl --fail --silent --show-error \
+            --connect-timeout 10 --max-time 30 \
+            --retry 3 --retry-delay 1 --retry-all-errors \
             --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${CLOUDFLARE_PAGES_PROJECT}")"
           jq -e '.success == true' <<< "${response}" >/dev/null
