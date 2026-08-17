@@ -28,7 +28,6 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
       CLOUDFLARE_PAGES_ORIGIN: ${{ vars.CLOUDFLARE_PAGES_ORIGIN }}
-      CLOUDFLARE_PAGES_CUSTOM_DOMAIN: ${{ vars.CLOUDFLARE_PAGES_CUSTOM_DOMAIN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -87,6 +86,5 @@ jobs:
       - name: Verify Pages origin
         run: scripts/verify-publication.sh "${CLOUDFLARE_PAGES_ORIGIN}" _site "${GITHUB_SHA}"
 
-      - name: Verify custom domain
-        if: env.CLOUDFLARE_PAGES_CUSTOM_DOMAIN != ''
-        run: scripts/verify-publication.sh "${CLOUDFLARE_PAGES_CUSTOM_DOMAIN}" _site "${GITHUB_SHA}"
+      - name: Verify canonical custom domain
+        run: scripts/verify-publication.sh https://voting.valargroup.dev _site "${GITHUB_SHA}"

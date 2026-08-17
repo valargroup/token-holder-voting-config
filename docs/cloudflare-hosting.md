@@ -88,8 +88,9 @@ checks before setting `CLOUDFLARE_PAGES_ENABLED=true`:
    - `CLOUDFLARE_ACCOUNT_ID`
    - `CLOUDFLARE_PAGES_PROJECT`
    - `CLOUDFLARE_PAGES_ORIGIN`
-   - `CLOUDFLARE_PAGES_CUSTOM_DOMAIN`
    - a scoped `CLOUDFLARE_API_TOKEN` secret
+   The canonical custom domain is fixed in the workflow rather than supplied
+   through an environment variable.
 3. Confirm `main` contains the publisher and all required checks pass.
 4. Enable the repository gate and dispatch the workflow from `main` once.
 5. Verify the Pages origin and `https://voting.valargroup.dev` report the

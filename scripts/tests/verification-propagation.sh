@@ -290,4 +290,10 @@ grep -F 'verification deadline expired while waiting for published bytes for pro
   <<< "$outage_output" >/dev/null \
   || fail "GitHub-dependent endpoint failed for an unexpected reason: ${outage_output}"
 
+# shellcheck disable=SC2016
+grep -Fqx \
+  '        run: scripts/verify-publication.sh https://voting.valargroup.dev _site "${GITHUB_SHA}"' \
+  "${repo_root}/.github/workflows/deploy-cloudflare-pages.yml" \
+  || fail "Cloudflare workflow must always verify the canonical custom domain"
+
 printf 'Publication propagation test passed\n'
