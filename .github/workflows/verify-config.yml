@@ -4,28 +4,60 @@ on:
   pull_request:
     paths:
       - "prod/dynamic-voting-config.json"
+      - "prod/pir.json"
       - "prod/static-voting-config.json"
       - "stage/dynamic-voting-config.json"
+      - "stage/pir.json"
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
+      - "pins/**"
+      - "_headers"
+      - "scripts/build-cloudflare-pages.sh"
+      - "scripts/build-github-pages.sh"
+      - "scripts/require-latest-main.sh"
+      - "scripts/require-reconciled-publication.sh"
+      - "scripts/rollback-publication.sh"
+      - "scripts/verify-static-config-compatibility.sh"
+      - "scripts/verify-publication.sh"
+      - "scripts/rehearse-github-outage.sh"
+      - "scripts/lib/**"
+      - "scripts/tests/**"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
+      - ".github/workflows/deploy-cloudflare-pages.yml"
+      - "legacy/**"
   push:
     branches: [main]
     paths:
       - "prod/dynamic-voting-config.json"
+      - "prod/pir.json"
       - "prod/static-voting-config.json"
       - "stage/dynamic-voting-config.json"
+      - "stage/pir.json"
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
+      - "pins/**"
+      - "_headers"
+      - "scripts/build-cloudflare-pages.sh"
+      - "scripts/build-github-pages.sh"
+      - "scripts/require-latest-main.sh"
+      - "scripts/require-reconciled-publication.sh"
+      - "scripts/rollback-publication.sh"
+      - "scripts/verify-static-config-compatibility.sh"
+      - "scripts/verify-publication.sh"
+      - "scripts/rehearse-github-outage.sh"
+      - "scripts/lib/**"
+      - "scripts/tests/**"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
+      - ".github/workflows/deploy-cloudflare-pages.yml"
+      - "legacy/**"
   workflow_dispatch:
 
 permissions:
@@ -41,6 +73,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install voting-config verifier
         run: |
@@ -74,3 +108,20 @@ jobs:
 
       - name: Verify staging duplicate static config
         run: voting-config verify --config stage/dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json
+
+      - name: Verify published static config compatibility
+        run: scripts/verify-static-config-compatibility.sh
+
+      - name: Build serving snapshot
+        env:
+          PIN_BASE_REVISION: ${{ github.event.pull_request.base.sha || github.event.before || format('{0}^', github.sha) }}
+          SOURCE_REVISION: ${{ github.sha }}
+          PUBLICATION_MODE: local-test
+          PUBLISHED_AT: "2026-08-17T00:00:00Z"
+        run: scripts/build-cloudflare-pages.sh "${RUNNER_TEMP}/voting-config-site"
+
+      - name: Test publication scripts
+        run: |
+          for test_script in scripts/tests/*.sh; do
+            bash "$test_script"
+          done

@@ -6,6 +6,7 @@ on:
     paths:
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
+      - "pins/test/**"
       - ".github/workflows/deploy-duplicate-static-config.yml"
   workflow_dispatch:
 
@@ -31,6 +32,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Install voting-config verifier
         run: |
           mkdir -p "${HOME}/.local/bin"
@@ -52,8 +55,13 @@ jobs:
       - name: Verify staging voting config
         run: voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json
 
-      - name: Compute and publish static config sha256 files
+      - name: Build serving snapshot
+        env:
+          PIN_BASE_REVISION: ${{ github.event.before || format('{0}^', github.sha) }}
+          SOURCE_REVISION: ${{ github.sha }}
+          PUBLICATION_MODE: automatic
         run: |
+          scripts/build-github-pages.sh _site
           PROD_HASH=$(sha256sum prod/static-voting-config.json | awk '{print $1}')
           STAGE_HASH=$(sha256sum stage/static-voting-config.json | awk '{print $1}')
           PROD_DUPLICATE_HASH=$(sha256sum test/prod-static-voting-config-duplicate.json | awk '{print $1}')
@@ -62,19 +70,15 @@ jobs:
           echo "stage/static-voting-config.json sha256: ${STAGE_HASH}"
           echo "test/prod-static-voting-config-duplicate.json sha256: ${PROD_DUPLICATE_HASH}"
           echo "test/static-voting-config-duplicate.json sha256: ${STAGE_DUPLICATE_HASH}"
-          echo "${PROD_HASH}  prod/static-voting-config.json" > prod/static-voting-config.json.sha256
-          echo "${STAGE_HASH}  stage/static-voting-config.json" > stage/static-voting-config.json.sha256
-          echo "${PROD_DUPLICATE_HASH}  test/prod-static-voting-config-duplicate.json" > test/prod-static-voting-config-duplicate.json.sha256
-          echo "${STAGE_DUPLICATE_HASH}  test/static-voting-config-duplicate.json" > test/static-voting-config-duplicate.json.sha256
           {
-            echo "PROD_FOLDER_PIN_LINE=https://voting.valargroup.org/prod/static-voting-config.json?checksum=sha256:${PROD_HASH}"
-            echo "STAGE_PIN_LINE=https://voting.valargroup.org/stage/static-voting-config.json?checksum=sha256:${STAGE_HASH}"
-            echo "PROD_DUPLICATE_PIN_LINE=https://voting.valargroup.org/test/prod-static-voting-config-duplicate.json?checksum=sha256:${PROD_DUPLICATE_HASH}"
-            echo "STAGE_DUPLICATE_PIN_LINE=https://voting.valargroup.org/test/static-voting-config-duplicate.json?checksum=sha256:${STAGE_DUPLICATE_HASH}"
+            echo "PROD_PIN_LINE=https://voting.valargroup.dev/pins/prod/${PROD_HASH}/static-voting-config.json?checksum=sha256:${PROD_HASH}"
+            echo "STAGE_PIN_LINE=https://voting.valargroup.dev/pins/stage/${STAGE_HASH}/static-voting-config.json?checksum=sha256:${STAGE_HASH}"
+            echo "PROD_DUPLICATE_PIN_LINE=https://voting.valargroup.dev/pins/test/prod/${PROD_DUPLICATE_HASH}/static-voting-config.json?checksum=sha256:${PROD_DUPLICATE_HASH}"
+            echo "STAGE_DUPLICATE_PIN_LINE=https://voting.valargroup.dev/pins/test/stage/${STAGE_DUPLICATE_HASH}/static-voting-config.json?checksum=sha256:${STAGE_DUPLICATE_HASH}"
           } >> "${GITHUB_STEP_SUMMARY}"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
