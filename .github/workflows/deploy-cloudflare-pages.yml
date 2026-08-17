@@ -99,7 +99,6 @@ jobs:
             --branch main \
             --commit-hash "${GITHUB_SHA}" \
             --commit-dirty=false
-          echo "deployed=true" >> "${GITHUB_OUTPUT}"
 
       - name: Verify Pages origin
         run: scripts/verify-publication.sh "${CLOUDFLARE_PAGES_ORIGIN}" _site "${GITHUB_SHA}"
@@ -108,13 +107,10 @@ jobs:
         if: env.CLOUDFLARE_PAGES_CUSTOM_DOMAIN != ''
         run: scripts/verify-publication.sh "${CLOUDFLARE_PAGES_CUSTOM_DOMAIN}" _site "${GITHUB_SHA}"
 
-      - name: Roll back failed publication
-        if: (failure() || cancelled()) && steps.publish.outputs.deployed == 'true' && steps.previous.outputs.id != ''
+      - name: Roll back unverified publication
+        if: (failure() || cancelled()) && steps.publish.outcome != 'skipped' && steps.previous.outputs.id != ''
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          PREVIOUS_DEPLOYMENT_ID: ${{ steps.previous.outputs.id }}
-        run: |
-          response="$(curl --fail --silent --show-error --request POST \
-            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${CLOUDFLARE_PAGES_PROJECT}/deployments/${PREVIOUS_DEPLOYMENT_ID}/rollback")"
-          jq -e '.success == true' <<< "${response}" >/dev/null
+        run: scripts/rollback-publication.sh \
+          "${CLOUDFLARE_ACCOUNT_ID}" "${CLOUDFLARE_PAGES_PROJECT}" \
+          "${{ steps.previous.outputs.id }}" "${GITHUB_SHA}"

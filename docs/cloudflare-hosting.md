@@ -96,10 +96,12 @@ source revision and cache headers, and confirms that the test seed returns 404.
 A stale HTTP 200 response is polled until the expected bytes and headers appear
 or the three-minute verification deadline expires.
 A failed build or upload leaves the preceding production deployment active. If
-post-deploy verification fails, the workflow calls the Pages rollback API for
-the production deployment it recorded before upload. The first deployment has
-no rollback target and must be verified on `pages.dev` before custom-domain
-attachment.
+upload is interrupted or post-deploy verification fails, cleanup polls the live
+deployment and rolls it back only when its manifest identifies this workflow's
+automatic revision. This avoids relying on a runner output that may not be
+written after Cloudflare accepts an upload, while leaving unrelated emergency
+publications untouched. The first deployment has no rollback target and must be
+verified on `pages.dev` before custom-domain attachment.
 
 The static and dynamic files are separate HTTP requests. A client can therefore
 read them on opposite sides of a deployment. Keep old trusted keys in the new
