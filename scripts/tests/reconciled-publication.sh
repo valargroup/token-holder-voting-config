@@ -66,14 +66,20 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         request_path = urlsplit(self.path).path
-        if request_path == "/client/v4/accounts/test-account/pages/projects/test-project/deployments":
+        if request_path == "/client/v4/accounts/test-account/pages/projects/test-project":
             api_marker.touch()
             body = json.dumps({
                 "success": True,
-                "result": [{
-                    "id": "current-deployment",
-                    "url": f"http://127.0.0.1:{self.server.server_port}/deployment",
-                }],
+                "result": {
+                    "canonical_deployment": {
+                        "id": "current-deployment",
+                        "url": f"http://127.0.0.1:{self.server.server_port}/deployment",
+                    },
+                    "latest_deployment": {
+                        "id": "newer-failed-deployment",
+                        "url": f"http://127.0.0.1:{self.server.server_port}/failed",
+                    },
+                },
             }).encode()
         elif request_path == "/deployment/deployment-manifest.json":
             body = (serve_root / "deployment-manifest.json").read_bytes()

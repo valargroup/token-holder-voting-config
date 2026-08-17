@@ -38,18 +38,19 @@ fetch_current_deployment() {
     --connect-timeout 10 --max-time 30 \
     --retry 3 --retry-delay 1 --retry-all-errors \
     --header "Authorization: Bearer ${api_token}" \
-    "${api_base_url%/}/accounts/${account_id}/pages/projects/${pages_project}/deployments?env=production&per_page=1"
+    "${api_base_url%/}/accounts/${account_id}/pages/projects/${pages_project}"
 }
 
 deployments_response="$(fetch_current_deployment)" \
   || fail "could not resolve the current production deployment"
-jq -e '.success == true and (.result | length) > 0' <<< "$deployments_response" >/dev/null \
+jq -e '.success == true and (.result.canonical_deployment | type) == "object"' \
+  <<< "$deployments_response" >/dev/null \
   || fail "Cloudflare returned no current production deployment"
 
-deployment_id="$(jq -er '.result[0].id | select(type == "string" and length > 0)' \
+deployment_id="$(jq -er '.result.canonical_deployment.id | select(type == "string" and length > 0)' \
   <<< "$deployments_response")" \
   || fail "current production deployment has an invalid ID"
-deployment_url="$(jq -er '.result[0].url | select(type == "string" and length > 0)' \
+deployment_url="$(jq -er '.result.canonical_deployment.url | select(type == "string" and length > 0)' \
   <<< "$deployments_response")" \
   || fail "current production deployment has an invalid URL"
 case "$deployment_url" in
@@ -76,7 +77,7 @@ git merge-base --is-ancestor "$live_revision" "$expected_revision" \
 
 confirmed_response="$(fetch_current_deployment)" \
   || fail "could not confirm the current production deployment"
-confirmed_id="$(jq -er '.result[0].id | select(type == "string" and length > 0)' \
+confirmed_id="$(jq -er '.result.canonical_deployment.id | select(type == "string" and length > 0)' \
   <<< "$confirmed_response")" \
   || fail "confirmed production deployment has an invalid ID"
 [[ "$confirmed_id" == "$deployment_id" ]] \

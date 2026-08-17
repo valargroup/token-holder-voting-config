@@ -81,9 +81,9 @@ jobs:
         run: |
           response="$(curl --fail --silent --show-error \
             --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${CLOUDFLARE_PAGES_PROJECT}/deployments?env=production&per_page=1")"
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${CLOUDFLARE_PAGES_PROJECT}")"
           jq -e '.success == true' <<< "${response}" >/dev/null
-          echo "id=$(jq -r '.result[0].id // empty' <<< "${response}")" >> "${GITHUB_OUTPUT}"
+          echo "id=$(jq -r '.result.canonical_deployment.id // empty' <<< "${response}")" >> "${GITHUB_OUTPUT}"
 
       - name: Publish complete snapshot
         id: publish

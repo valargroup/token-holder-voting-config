@@ -201,11 +201,11 @@ request. After it merges, the Cloudflare workflow:
 4. Compares every important served object with the local package.
 
 Immediately before upload, after preloading Wrangler, the workflow queries the
-Cloudflare API for the then-current production deployment and reads the
+Cloudflare project API for its canonical production deployment and reads the
 manifest from that deployment's immutable Pages URL. Its source revision must
-be an ancestor of the `main` revision being published. The earlier deployment
-record is used only as a rollback target. This prevents a queued run from
-relying on state captured before a manual emergency deployment landed.
+be an ancestor of the `main` revision being published. The earlier canonical
+deployment record is used only as a rollback target. This avoids selecting a
+newer failed deployment or a deployment that has since been rolled back.
 
 Do not publish individual JSON objects. An upload failure leaves the preceding
 snapshot active and should be treated as a delayed publication, not as permission
