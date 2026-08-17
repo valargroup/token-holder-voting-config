@@ -29,6 +29,7 @@ prod_pir_header_marker="${test_root}/served-stale-prod-pir-header"
 stage_pir_header_marker="${test_root}/served-stale-stage-pir-header"
 stage_static_header_marker="${test_root}/served-stale-stage-static-header"
 manifest_header_marker="${test_root}/served-stale-manifest-header"
+test_alias_header_marker="${test_root}/checked-test-alias-headers"
 github_redirect_marker="${test_root}/redirect-through-github"
 redirect_final_header_marker="${test_root}/served-stale-redirect-final-header"
 SOURCE_REVISION=local-test \
@@ -39,7 +40,8 @@ python3 - \
   "$expected_dir" "$port_file" "$stale_marker" \
   "$prod_pir_header_marker" "$stage_pir_header_marker" \
   "$stage_static_header_marker" "$manifest_header_marker" \
-  "$github_redirect_marker" "$redirect_final_header_marker" <<'PY' &
+  "$test_alias_header_marker" "$github_redirect_marker" \
+  "$redirect_final_header_marker" <<'PY' &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import sys
@@ -52,8 +54,9 @@ prod_pir_header_marker = Path(sys.argv[4])
 stage_pir_header_marker = Path(sys.argv[5])
 stage_static_header_marker = Path(sys.argv[6])
 manifest_header_marker = Path(sys.argv[7])
-github_redirect_marker = Path(sys.argv[8])
-redirect_final_header_marker = Path(sys.argv[9])
+test_alias_header_marker = Path(sys.argv[8])
+github_redirect_marker = Path(sys.argv[9])
+redirect_final_header_marker = Path(sys.argv[10])
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -70,7 +73,7 @@ class Handler(BaseHTTPRequestHandler):
     def cache_control(self, request_path):
         if request_path.startswith("pins/"):
             return "public, max-age=31536000, immutable"
-        if request_path.endswith("static-voting-config.json"):
+        if request_path.startswith("test/") or request_path.endswith("static-voting-config.json"):
             return "public, max-age=300, must-revalidate, stale-if-error=86400"
         return "public, max-age=60, must-revalidate, stale-if-error=86400"
 
@@ -113,6 +116,12 @@ class Handler(BaseHTTPRequestHandler):
             stale_marker.touch()
 
         cache_control = self.cache_control(request_path)
+        if not include_body and request_path in {
+            "test/prod-static-voting-config-duplicate.json",
+            "test/static-voting-config-duplicate.json",
+        }:
+            with test_alias_header_marker.open("a", encoding="utf-8") as marker:
+                marker.write(f"{request_path}\n")
         if not include_body and request_path == "prod/pir.json" and not Handler.stale_prod_pir_header_sent:
             cache_control = "public, max-age=600, must-revalidate, stale-if-error=86400"
             Handler.stale_prod_pir_header_sent = True
@@ -198,6 +207,10 @@ set -e
 [[ -f "$stage_pir_header_marker" ]] || fail "verification did not inspect the staging PIR cache header"
 [[ -f "$stage_static_header_marker" ]] || fail "verification did not inspect the staging static cache header"
 [[ -f "$manifest_header_marker" ]] || fail "verification did not inspect the manifest cache header"
+grep -Fx 'test/prod-static-voting-config-duplicate.json' "$test_alias_header_marker" >/dev/null \
+  || fail "verification did not inspect the production test alias cache header"
+grep -Fx 'test/static-voting-config-duplicate.json' "$test_alias_header_marker" >/dev/null \
+  || fail "verification did not inspect the staging test alias cache header"
 grep -F 'Waiting for published bytes for prod/dynamic-voting-config.json' \
   <<< "$verify_output" >/dev/null \
   || fail "verification did not poll the stale response"

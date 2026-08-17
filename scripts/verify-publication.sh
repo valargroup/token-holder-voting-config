@@ -197,6 +197,8 @@ header_matches stage/pir.json cache-control "$short_cache_pattern"
 header_matches deployment-manifest.json cache-control "$short_cache_pattern"
 header_matches prod/static-voting-config.json cache-control "$static_cache_pattern"
 header_matches stage/static-voting-config.json cache-control "$static_cache_pattern"
+header_matches test/prod-static-voting-config-duplicate.json cache-control "$static_cache_pattern"
+header_matches test/static-voting-config-duplicate.json cache-control "$static_cache_pattern"
 header_matches "pins/prod/${prod_static_sha256}/static-voting-config.json" \
   cache-control "$immutable_cache_pattern"
 header_matches "pins/stage/${stage_static_sha256}/static-voting-config.json" \
