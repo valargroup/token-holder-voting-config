@@ -44,7 +44,12 @@ for legacy_entry in "${legacy_files[@]}"; do
     > "${output_dir}/${relative_path}.sha256"
 done
 
-cp "${repo_root}/CNAME" "${output_dir}/CNAME"
+cname_source="${repo_root}/CNAME"
+[[ -f "$cname_source" && ! -L "$cname_source" ]] \
+  || fail "missing or unsafe CNAME file: ${cname_source}"
+[[ "$(cat "$cname_source")" == voting.valargroup.org ]] \
+  || fail "CNAME must contain voting.valargroup.org"
+cp "$cname_source" "${output_dir}/CNAME"
 unlink "${output_dir}/deployment-manifest.json"
 
 printf 'Built GitHub Pages compatibility snapshot in %s\n' "$output_dir"
