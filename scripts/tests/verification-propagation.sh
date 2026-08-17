@@ -28,6 +28,7 @@ stale_marker="${test_root}/served-stale"
 prod_pir_header_marker="${test_root}/served-stale-prod-pir-header"
 stage_pir_header_marker="${test_root}/served-stale-stage-pir-header"
 stage_static_header_marker="${test_root}/served-stale-stage-static-header"
+manifest_header_marker="${test_root}/served-stale-manifest-header"
 github_redirect_marker="${test_root}/redirect-through-github"
 SOURCE_REVISION=local-test \
 PUBLICATION_MODE=local-test \
@@ -37,7 +38,8 @@ PUBLISHED_AT=2026-08-17T00:00:00Z \
 python3 - \
   "$expected_dir" "$port_file" "$stale_marker" \
   "$prod_pir_header_marker" "$stage_pir_header_marker" \
-  "$stage_static_header_marker" "$github_redirect_marker" <<'PY' &
+  "$stage_static_header_marker" "$manifest_header_marker" \
+  "$github_redirect_marker" <<'PY' &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import sys
@@ -49,7 +51,8 @@ stale_marker = Path(sys.argv[3])
 prod_pir_header_marker = Path(sys.argv[4])
 stage_pir_header_marker = Path(sys.argv[5])
 stage_static_header_marker = Path(sys.argv[6])
-github_redirect_marker = Path(sys.argv[7])
+manifest_header_marker = Path(sys.argv[7])
+github_redirect_marker = Path(sys.argv[8])
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -57,6 +60,7 @@ class Handler(BaseHTTPRequestHandler):
     stale_prod_pir_header_sent = False
     stale_stage_pir_header_sent = False
     stale_stage_static_header_sent = False
+    stale_manifest_header_sent = False
 
     def log_message(self, _format, *_args):
         pass
@@ -118,6 +122,14 @@ class Handler(BaseHTTPRequestHandler):
             cache_control = "public, max-age=86400"
             Handler.stale_stage_static_header_sent = True
             stage_static_header_marker.touch()
+        if (
+            not include_body
+            and request_path == "deployment-manifest.json"
+            and not Handler.stale_manifest_header_sent
+        ):
+            cache_control = "public, max-age=86400"
+            Handler.stale_manifest_header_sent = True
+            manifest_header_marker.touch()
 
         self.send_response(200)
         self.send_header("Content-Length", str(len(body)))
@@ -168,6 +180,7 @@ set -e
 [[ -f "$prod_pir_header_marker" ]] || fail "verification did not inspect the production PIR cache header"
 [[ -f "$stage_pir_header_marker" ]] || fail "verification did not inspect the staging PIR cache header"
 [[ -f "$stage_static_header_marker" ]] || fail "verification did not inspect the staging static cache header"
+[[ -f "$manifest_header_marker" ]] || fail "verification did not inspect the manifest cache header"
 grep -F 'Waiting for published bytes for prod/dynamic-voting-config.json' \
   <<< "$verify_output" >/dev/null \
   || fail "verification did not poll the stale response"
@@ -180,6 +193,9 @@ grep -F 'Waiting for header for stage/pir.json:' \
 grep -F 'Waiting for header for stage/static-voting-config.json:' \
   <<< "$verify_output" >/dev/null \
   || fail "verification did not poll the stale staging static cache header"
+grep -F 'Waiting for header for deployment-manifest.json:' \
+  <<< "$verify_output" >/dev/null \
+  || fail "verification did not poll the stale manifest cache header"
 
 outage_output="$(
   VERIFY_CONNECT_TIMEOUT_SECONDS=1 \
