@@ -163,6 +163,8 @@ done
 
 header_contains prod/dynamic-voting-config.json '^cache-control:.*max-age=60.*must-revalidate'
 header_contains stage/dynamic-voting-config.json '^cache-control:.*max-age=60.*must-revalidate'
+header_contains prod/pir.json '^cache-control:.*max-age=60.*must-revalidate'
+header_contains stage/pir.json '^cache-control:.*max-age=60.*must-revalidate'
 header_contains prod/static-voting-config.json '^cache-control:.*max-age=300.*must-revalidate'
 header_contains "pins/prod/${prod_static_sha256}/static-voting-config.json" '^cache-control:.*max-age=31536000.*immutable'
 header_contains prod/dynamic-voting-config.json '^access-control-allow-origin:[[:space:]]*\*'

@@ -25,12 +25,16 @@ trap cleanup EXIT
 expected_dir="${test_root}/expected"
 port_file="${test_root}/port"
 stale_marker="${test_root}/served-stale"
+prod_pir_header_marker="${test_root}/served-stale-prod-pir-header"
+stage_pir_header_marker="${test_root}/served-stale-stage-pir-header"
 SOURCE_REVISION=local-test \
 PUBLICATION_MODE=local-test \
 PUBLISHED_AT=2026-08-17T00:00:00Z \
   "${repo_root}/scripts/build-cloudflare-pages.sh" "$expected_dir" >/dev/null
 
-python3 - "$expected_dir" "$port_file" "$stale_marker" <<'PY' &
+python3 - \
+  "$expected_dir" "$port_file" "$stale_marker" \
+  "$prod_pir_header_marker" "$stage_pir_header_marker" <<'PY' &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import sys
@@ -39,10 +43,14 @@ from urllib.parse import urlsplit
 root = Path(sys.argv[1]).resolve()
 port_path = Path(sys.argv[2])
 stale_marker = Path(sys.argv[3])
+prod_pir_header_marker = Path(sys.argv[4])
+stage_pir_header_marker = Path(sys.argv[5])
 
 
 class Handler(BaseHTTPRequestHandler):
     stale_sent = False
+    stale_prod_pir_header_sent = False
+    stale_stage_pir_header_sent = False
 
     def log_message(self, _format, *_args):
         pass
@@ -73,9 +81,19 @@ class Handler(BaseHTTPRequestHandler):
             Handler.stale_sent = True
             stale_marker.touch()
 
+        cache_control = self.cache_control(request_path)
+        if not include_body and request_path == "prod/pir.json" and not Handler.stale_prod_pir_header_sent:
+            cache_control = "public, max-age=86400"
+            Handler.stale_prod_pir_header_sent = True
+            prod_pir_header_marker.touch()
+        if not include_body and request_path == "stage/pir.json" and not Handler.stale_stage_pir_header_sent:
+            cache_control = "public, max-age=86400"
+            Handler.stale_stage_pir_header_sent = True
+            stage_pir_header_marker.touch()
+
         self.send_response(200)
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", self.cache_control(request_path))
+        self.send_header("Cache-Control", cache_control)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         if include_body:
@@ -119,8 +137,16 @@ set -e
 [[ "$verify_status" -eq 0 ]] \
   || fail "verification did not tolerate stale propagation: ${verify_output}"
 [[ -f "$stale_marker" ]] || fail "test server did not return a stale HTTP 200 response"
+[[ -f "$prod_pir_header_marker" ]] || fail "verification did not inspect the production PIR cache header"
+[[ -f "$stage_pir_header_marker" ]] || fail "verification did not inspect the staging PIR cache header"
 grep -F 'Waiting for published bytes for prod/dynamic-voting-config.json' \
   <<< "$verify_output" >/dev/null \
   || fail "verification did not poll the stale response"
+grep -F 'Waiting for header for prod/pir.json: ^cache-control:.*max-age=60.*must-revalidate' \
+  <<< "$verify_output" >/dev/null \
+  || fail "verification did not poll the stale production PIR cache header"
+grep -F 'Waiting for header for stage/pir.json: ^cache-control:.*max-age=60.*must-revalidate' \
+  <<< "$verify_output" >/dev/null \
+  || fail "verification did not poll the stale staging PIR cache header"
 
 printf 'Publication propagation test passed\n'
