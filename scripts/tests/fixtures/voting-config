@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+[[ $# -eq 5 ]]
+[[ "$1" == "verify" ]]
+[[ "$2" == "--config" ]]
+[[ "$4" == "--static-config" ]]

@@ -5,6 +5,7 @@ on:
     paths-ignore:
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
+      - "pins/test/**"
       - ".github/workflows/deploy-duplicate-static-config.yml"
   workflow_dispatch:
 
@@ -30,6 +31,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Install voting-config verifier
         run: |
           mkdir -p "${HOME}/.local/bin"
@@ -43,21 +46,22 @@ jobs:
         run: voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
       - name: Verify staging voting config
         run: voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json
-      - name: Compute and publish static config sha256 files
+      - name: Build serving snapshot
+        env:
+          SOURCE_REVISION: ${{ github.sha }}
         run: |
+          scripts/build-github-pages.sh _site
           PROD_HASH=$(sha256sum prod/static-voting-config.json | awk '{print $1}')
           STAGE_HASH=$(sha256sum stage/static-voting-config.json | awk '{print $1}')
           echo "prod/static-voting-config.json sha256: ${PROD_HASH}"
           echo "stage/static-voting-config.json sha256: ${STAGE_HASH}"
-          echo "${PROD_HASH}  prod/static-voting-config.json" > prod/static-voting-config.json.sha256
-          echo "${STAGE_HASH}  stage/static-voting-config.json" > stage/static-voting-config.json.sha256
           {
-            echo "PROD_FOLDER_PIN_LINE=https://voting.valargroup.org/prod/static-voting-config.json?checksum=sha256:${PROD_HASH}"
-            echo "STAGE_PIN_LINE=https://voting.valargroup.org/stage/static-voting-config.json?checksum=sha256:${STAGE_HASH}"
+            echo "PROD_PIN_LINE=https://voting.valargroup.dev/pins/prod/${PROD_HASH}/static-voting-config.json?checksum=sha256:${PROD_HASH}"
+            echo "STAGE_PIN_LINE=https://voting.valargroup.dev/pins/stage/${STAGE_HASH}/static-voting-config.json?checksum=sha256:${STAGE_HASH}"
           } >> "${GITHUB_STEP_SUMMARY}"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

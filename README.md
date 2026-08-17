@@ -1,20 +1,24 @@
 # token-holder-voting-config
 
-Service discovery and round authentication for shielded voting infrastructure. This repo is published through GitHub Pages so wallets can find vote servers, PIR endpoints, and authenticated round metadata without running their own chain node.
+Service discovery and round authentication for shielded voting infrastructure. The reviewed files on `main` are the source of truth. Complete snapshots are published to Cloudflare Pages so wallets can find vote servers, PIR endpoints, and authenticated round metadata without depending on GitHub at request time. `voting.valargroup.dev` is the canonical host. The existing `voting.valargroup.org` GitHub Pages site remains a legacy mirror and is not an automatic client fallback.
 
 This repo serves environment-scoped configuration documents:
 
 | URL | Schema | Status |
 | --- | --- | --- |
-| [`voting-config.json`](https://voting.valargroup.org/voting-config.json) | v1, unsigned | Frozen for backwards compatibility with installed wallets that predate the v2 schema. |
-| [`dynamic-voting-config.json`](https://voting.valargroup.org/dynamic-voting-config.json) | Production dynamic config, per-round signed registry | Active. Production wallet releases consume this through their hash-pinned production static config. |
-| [`static-voting-config.json`](https://voting.valargroup.org/static-voting-config.json) | Production static config | Active. Production wallet releases hash-pin this file's bytes; any change requires a coordinated wallet release. See [Hash-pinning and wallet releases](#hash-pinning-and-wallet-releases). |
-| [`prod/dynamic-voting-config.json`](https://voting.valargroup.org/prod/dynamic-voting-config.json) | Production dynamic config, per-round signed registry | Active compatibility path for clients and tools pinned to the `prod/` layout. Keep this in sync with the root production dynamic config while both paths are supported. |
-| [`prod/static-voting-config.json`](https://voting.valargroup.org/prod/static-voting-config.json) | Production static config | Active compatibility path for clients and tools pinned to the `prod/` layout. Its `dynamic_config_url` points at `prod/dynamic-voting-config.json`. |
-| [`stage/dynamic-voting-config.json`](https://voting.valargroup.org/stage/dynamic-voting-config.json) | Staging dynamic config, per-round signed registry | Active for staging wallets and test workflows. |
-| [`stage/static-voting-config.json`](https://voting.valargroup.org/stage/static-voting-config.json) | Staging static config | Active for staging wallets and test workflows. |
+| [`prod/dynamic-voting-config.json`](https://voting.valargroup.dev/prod/dynamic-voting-config.json) | Production dynamic config, per-round signed registry | Active production path. |
+| [`prod/static-voting-config.json`](https://voting.valargroup.dev/prod/static-voting-config.json) | Production static config | Current production alias. Wallet releases must use its immutable `pins/prod/<sha256>/` copy. |
+| [`stage/dynamic-voting-config.json`](https://voting.valargroup.dev/stage/dynamic-voting-config.json) | Staging dynamic config, per-round signed registry | Active for staging wallets and test workflows. |
+| [`stage/static-voting-config.json`](https://voting.valargroup.dev/stage/static-voting-config.json) | Staging static config | Current staging alias. Staging releases should use its immutable `pins/stage/<sha256>/` copy. |
+| [`deployment-manifest.json`](https://voting.valargroup.dev/deployment-manifest.json) | Publication metadata | Identifies the complete snapshot's source revision, publication time, and config hashes. |
 
 The dynamic and static schemas implement [draft ZIP 1244](https://github.com/zcash/zips/pull/1244) "Shielded Voting Wallet API". The v1 file has no chain of trust; the dynamic config signs each round's election authority public key with an Ed25519 admin key whose public counterpart is fetched through the wallet's hash-pinned static config.
+
+The legacy `voting.valargroup.org` site continues publishing current dynamic
+configs, but its previously checksum-pinned static aliases are frozen at their
+pre-migration bytes. Every dynamic update must remain authenticated by those
+frozen keys and by every published immutable `.dev` pin. New releases must use
+the immutable `.dev/pins/` URLs.
 
 ## Dynamic Config Schema
 
@@ -62,7 +66,7 @@ file has this shape:
 ```json
 {
   "static_config_version": 1,
-  "dynamic_config_url": "https://raw.githubusercontent.com/valargroup/token-holder-voting-config/main/dynamic-voting-config.json",
+  "dynamic_config_url": "https://voting.valargroup.dev/prod/dynamic-voting-config.json",
   "trusted_keys": [
     {
       "key_id": "valar-2026-q2",
@@ -75,25 +79,22 @@ file has this shape:
 
 `trusted_keys` lists the admin Ed25519 public keys that may authenticate
 round entries in the matching environment's `dynamic-voting-config.json`.
-Production config lives at the repository root. The `prod/` directory is a
-production compatibility path for clients and tools that already pin
-`prod/static-voting-config.json`; keep the root and `prod/` production
-dynamic configs in sync while both paths are active. Staging config lives under
-`stage/`.
+Production config lives under `prod/`, and staging config lives under `stage/`.
 Wallets bind to a specific byte-for-byte copy by embedding a
 cosmovisor-style `URL?checksum=sha256:HEX` pin in the signed wallet
-binary. Replace the current development key before shipping a production
-wallet release.
+binary. Static configs point only to the controlled `voting.valargroup.dev`
+domain. This lets the serving platform change without another static-config
+change. Replace the current development key before shipping a production wallet
+release.
 
 For testing alternative config URLs, we publish duplicate static configs under
 `test/`. The production duplicate lives at
-`https://voting.valargroup.org/test/prod-static-voting-config-duplicate.json`,
+`https://voting.valargroup.dev/test/prod-static-voting-config-duplicate.json`,
 and the staging duplicate lives at
-`https://voting.valargroup.org/test/static-voting-config-duplicate.json`.
-Each file is intentionally a byte-for-byte duplicate of its matching
-environment static config. The separate "Deploy duplicate static configs"
-workflow verifies each duplicate against the matching dynamic config and
-publishes `.sha256` files beside them.
+`https://voting.valargroup.dev/test/static-voting-config-duplicate.json`.
+Each file is independently verified against its matching dynamic config. The
+separate "Deploy duplicate static configs" workflow publishes a complete
+snapshot and writes `.sha256` files beside the test aliases.
 
 ## Trust Model
 
@@ -113,36 +114,39 @@ A signature failure or `ea_pk` mismatch is scoped to that round. Other authentic
 ## Hash-pinning and wallet releases
 
 Any byte-level change to an environment's `static-voting-config.json`
-invalidates every wallet binary pinned to that file. Coordinate every
-production static-config change with a wallet release: first merge and deploy
-this repo, then copy the new production pin string into the wallet release
-branch.
+invalidates every wallet binary pinned to that file. Each version therefore has
+an immutable copy at `pins/<environment>/<sha256>/static-voting-config.json`.
+Duplicate test configs use the same contract under
+`pins/test/<environment>/<sha256>/static-voting-config.json`.
+The publisher refuses a static-config change unless that immutable copy is
+checked in. Coordinate every production static-config change with a wallet
+release: first merge and deploy this repo, then copy the new immutable pin into
+the wallet release branch.
 
 Compute a local pin with:
 
 ```bash
-HASH=$(sha256sum static-voting-config.json | awk '{print $1}')
-echo "https://voting.valargroup.org/static-voting-config.json?checksum=sha256:${HASH}"
-
 PROD_HASH=$(sha256sum prod/static-voting-config.json | awk '{print $1}')
-echo "https://voting.valargroup.org/prod/static-voting-config.json?checksum=sha256:${PROD_HASH}"
+echo "https://voting.valargroup.dev/pins/prod/${PROD_HASH}/static-voting-config.json?checksum=sha256:${PROD_HASH}"
+
+STAGE_HASH=$(sha256sum stage/static-voting-config.json | awk '{print $1}')
+echo "https://voting.valargroup.dev/pins/stage/${STAGE_HASH}/static-voting-config.json?checksum=sha256:${STAGE_HASH}"
 ```
 
-The deploy workflow also writes the canonical pin string to the GitHub
-Actions step summary and publishes
-`static-voting-config.json.sha256` files beside the root production, `prod/`
-production, and staging config for human verification. Wallets must trust the
-hash embedded in their signed binary, not the sidecar file.
+The deploy workflow also writes the canonical pin strings to the GitHub Actions
+step summary and publishes `static-voting-config.json.sha256` files for human
+verification. Wallets must trust the hash embedded in their signed binary, not
+the sidecar file.
 
 ## Operator Participation
 
 Bringing a vote server or PIR operator into rotation does not require a chain deploy or wallet release:
 
 1. Operator joins the chain, using [`vote-sdk`](https://github.com/valargroup/vote-sdk) tooling.
-2. Operator opens a PR adding their entry to the environment's `dynamic-voting-config.json` (root and `prod/` for production while both paths are active, `stage/` for staging). They may also update `voting-config.json` if they need visibility to v1 wallets.
+2. Operator opens a PR adding their entry to the environment's `dynamic-voting-config.json` (`prod/` for production, `stage/` for staging).
 3. CI verifies every dynamic-config round signature against the matching environment's `static-voting-config.json` `trusted_keys`.
 4. Maintainer reviews and merges.
-5. The deploy workflow verifies the config again before publishing GitHub Pages.
+5. The deploy workflows verify the config again before publishing a complete Cloudflare Pages snapshot and the transition GitHub Pages mirror.
 
 Removing an operator or changing an operator URL follows the same PR flow.
 
@@ -236,16 +240,19 @@ curl -fsSL \
 echo "40c2be2b97e27f2743f9f34107be7c21d9acd9d918bfda7ce61e0070d2f9fb77  voting-config" | sha256sum -c -
 chmod +x voting-config
 
-./voting-config verify --config dynamic-voting-config.json --static-config static-voting-config.json
 ./voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
 ./voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json
-echo "<hex from wallet binary>  static-voting-config.json" | sha256sum -c -
+SOURCE_REVISION=local-test \
+  scripts/build-cloudflare-pages.sh "$(mktemp -d)/site"
 ```
 
 ## CI
 
-Three workflows guard the dynamic-config path:
+Four workflows guard the serving path:
 
 - [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It downloads the checksum-pinned `voting-config` binary from the `vote-sdk` v1.3.0-rc.2 GitHub release and runs `voting-config verify`.
-- [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) runs the same checks before publishing to GitHub Pages. A bad signature blocks deployment.
-- [`deploy-duplicate-static-config.yml`](.github/workflows/deploy-duplicate-static-config.yml) applies the same verifier to the duplicate static-config deployment path.
+- [`deploy-cloudflare-pages.yml`](.github/workflows/deploy-cloudflare-pages.yml) publishes one versioned Cloudflare Pages snapshot and verifies the exact served bytes and headers. It is inert until the explicit repository enable flag and exact Cloudflare target are configured.
+- [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) retains the GitHub Pages transition mirror while freezing its previously checksum-pinned static aliases.
+- [`deploy-duplicate-static-config.yml`](.github/workflows/deploy-duplicate-static-config.yml) applies the same full-snapshot publisher when a test alias changes.
+
+The ownership model, rollout gates, failure behavior, rollback steps, and outage rehearsal are documented in [`docs/cloudflare-hosting.md`](docs/cloudflare-hosting.md).
