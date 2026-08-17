@@ -30,6 +30,7 @@ stage_pir_header_marker="${test_root}/served-stale-stage-pir-header"
 stage_static_header_marker="${test_root}/served-stale-stage-static-header"
 manifest_header_marker="${test_root}/served-stale-manifest-header"
 github_redirect_marker="${test_root}/redirect-through-github"
+redirect_final_header_marker="${test_root}/served-stale-redirect-final-header"
 SOURCE_REVISION=local-test \
 PUBLICATION_MODE=local-test \
 PUBLISHED_AT=2026-08-17T00:00:00Z \
@@ -39,7 +40,7 @@ python3 - \
   "$expected_dir" "$port_file" "$stale_marker" \
   "$prod_pir_header_marker" "$stage_pir_header_marker" \
   "$stage_static_header_marker" "$manifest_header_marker" \
-  "$github_redirect_marker" <<'PY' &
+  "$github_redirect_marker" "$redirect_final_header_marker" <<'PY' &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import sys
@@ -53,6 +54,7 @@ stage_pir_header_marker = Path(sys.argv[5])
 stage_static_header_marker = Path(sys.argv[6])
 manifest_header_marker = Path(sys.argv[7])
 github_redirect_marker = Path(sys.argv[8])
+redirect_final_header_marker = Path(sys.argv[9])
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -61,6 +63,7 @@ class Handler(BaseHTTPRequestHandler):
     stale_stage_pir_header_sent = False
     stale_stage_static_header_sent = False
     stale_manifest_header_sent = False
+    stale_redirect_final_header_sent = False
 
     def log_message(self, _format, *_args):
         pass
@@ -86,6 +89,11 @@ class Handler(BaseHTTPRequestHandler):
             and request_host in {"127.0.0.1", "localhost"}
         ):
             self.send_response(302)
+            if not include_body:
+                self.send_header(
+                    "Cache-Control",
+                    "public, max-age=60, must-revalidate, stale-if-error=86400",
+                )
             self.send_header(
                 "Location",
                 f"http://raw.githubusercontent.com:{self.server.server_port}/{request_path}",
@@ -130,6 +138,16 @@ class Handler(BaseHTTPRequestHandler):
             cache_control = "public, max-age=86400"
             Handler.stale_manifest_header_sent = True
             manifest_header_marker.touch()
+        if (
+            not include_body
+            and github_redirect_marker.exists()
+            and request_host == "raw.githubusercontent.com"
+            and request_path == "prod/dynamic-voting-config.json"
+            and not Handler.stale_redirect_final_header_sent
+        ):
+            cache_control = "public, max-age=600, must-revalidate, stale-if-error=86400"
+            Handler.stale_redirect_final_header_sent = True
+            redirect_final_header_marker.touch()
 
         self.send_response(200)
         self.send_header("Content-Length", str(len(body)))
@@ -217,16 +235,23 @@ mkdir "$curl_home"
 printf 'resolve = "raw.githubusercontent.com:%s:127.0.0.1"\n' "$port" > "${curl_home}/.curlrc"
 touch "$github_redirect_marker"
 
-VERIFY_CONNECT_TIMEOUT_SECONDS=1 \
-VERIFY_MAX_TIME_SECONDS=2 \
-VERIFY_RETRY_COUNT=0 \
-VERIFY_RETRY_DELAY_SECONDS=0 \
-VERIFY_RETRY_MAX_TIME_SECONDS=2 \
-VERIFY_DEADLINE_SECONDS=10 \
-VERIFY_POLL_INTERVAL_SECONDS=0 \
-CURL_HOME="$curl_home" \
-  "${repo_root}/scripts/verify-publication.sh" \
-    "http://127.0.0.1:${port}" "$expected_dir" local-test >/dev/null
+redirect_verify_output="$(
+  VERIFY_CONNECT_TIMEOUT_SECONDS=1 \
+  VERIFY_MAX_TIME_SECONDS=2 \
+  VERIFY_RETRY_COUNT=0 \
+  VERIFY_RETRY_DELAY_SECONDS=0 \
+  VERIFY_RETRY_MAX_TIME_SECONDS=2 \
+  VERIFY_DEADLINE_SECONDS=10 \
+  VERIFY_POLL_INTERVAL_SECONDS=0 \
+  CURL_HOME="$curl_home" \
+    "${repo_root}/scripts/verify-publication.sh" \
+      "http://127.0.0.1:${port}" "$expected_dir" local-test 2>&1
+)"
+[[ -f "$redirect_final_header_marker" ]] \
+  || fail "redirect test server did not return a stale final cache header"
+grep -F 'Waiting for header for prod/dynamic-voting-config.json:' \
+  <<< "$redirect_verify_output" >/dev/null \
+  || fail "verification accepted an intermediate response cache header"
 
 set +e
 outage_output="$(

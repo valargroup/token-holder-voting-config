@@ -130,19 +130,23 @@ compare_path() {
   wait_for_expected "published bytes for ${path}" compare_path_once "$path"
 }
 
-header_contains_once() {
+header_matches_once() {
   local path="$1"
-  local pattern="$2"
-  local headers
-  headers="$(bounded_curl --fail --silent --show-error --location --head \
+  local header_name="$2"
+  local pattern="$3"
+  local header_value
+  header_value="$(bounded_curl --fail --silent --show-error --location --head \
+    --output /dev/null --write-out "%header{${header_name}}" \
     "${base_url}/${path}?header-check=$(date +%s)" | tr -d '\r')" || return 1
-  grep -Eiq "$pattern" <<< "$headers"
+  grep -Eiq "$pattern" <<< "$header_value"
 }
 
-header_contains() {
+header_matches() {
   local path="$1"
-  local pattern="$2"
-  wait_for_expected "header for ${path}: ${pattern}" header_contains_once "$path" "$pattern"
+  local header_name="$2"
+  local pattern="$3"
+  wait_for_expected "header for ${path}: ${header_name}=${pattern}" \
+    header_matches_once "$path" "$header_name" "$pattern"
 }
 
 paths=(
@@ -176,19 +180,21 @@ for path in "${paths[@]}"; do
   compare_path "$path"
 done
 
-short_cache_pattern='^cache-control:[[:space:]]*public,[[:space:]]*max-age=60,[[:space:]]*must-revalidate,[[:space:]]*stale-if-error=86400[[:space:]]*$'
-static_cache_pattern='^cache-control:[[:space:]]*public,[[:space:]]*max-age=300,[[:space:]]*must-revalidate,[[:space:]]*stale-if-error=86400[[:space:]]*$'
-immutable_cache_pattern='^cache-control:[[:space:]]*public,[[:space:]]*max-age=31536000,[[:space:]]*immutable[[:space:]]*$'
+short_cache_pattern='^[[:space:]]*public,[[:space:]]*max-age=60,[[:space:]]*must-revalidate,[[:space:]]*stale-if-error=86400[[:space:]]*$'
+static_cache_pattern='^[[:space:]]*public,[[:space:]]*max-age=300,[[:space:]]*must-revalidate,[[:space:]]*stale-if-error=86400[[:space:]]*$'
+immutable_cache_pattern='^[[:space:]]*public,[[:space:]]*max-age=31536000,[[:space:]]*immutable[[:space:]]*$'
 
-header_contains prod/dynamic-voting-config.json "$short_cache_pattern"
-header_contains stage/dynamic-voting-config.json "$short_cache_pattern"
-header_contains prod/pir.json "$short_cache_pattern"
-header_contains stage/pir.json "$short_cache_pattern"
-header_contains deployment-manifest.json "$short_cache_pattern"
-header_contains prod/static-voting-config.json "$static_cache_pattern"
-header_contains stage/static-voting-config.json "$static_cache_pattern"
-header_contains "pins/prod/${prod_static_sha256}/static-voting-config.json" "$immutable_cache_pattern"
-header_contains prod/dynamic-voting-config.json '^access-control-allow-origin:[[:space:]]*\*'
+header_matches prod/dynamic-voting-config.json cache-control "$short_cache_pattern"
+header_matches stage/dynamic-voting-config.json cache-control "$short_cache_pattern"
+header_matches prod/pir.json cache-control "$short_cache_pattern"
+header_matches stage/pir.json cache-control "$short_cache_pattern"
+header_matches deployment-manifest.json cache-control "$short_cache_pattern"
+header_matches prod/static-voting-config.json cache-control "$static_cache_pattern"
+header_matches stage/static-voting-config.json cache-control "$static_cache_pattern"
+header_matches "pins/prod/${prod_static_sha256}/static-voting-config.json" \
+  cache-control "$immutable_cache_pattern"
+header_matches prod/dynamic-voting-config.json access-control-allow-origin \
+  '^[[:space:]]*\*[[:space:]]*$'
 
 if [[ -n "$expected_revision" ]]; then
   jq -e --arg expected "$expected_revision" '.source_revision == $expected' \
