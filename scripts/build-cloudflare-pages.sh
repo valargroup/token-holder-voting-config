@@ -82,6 +82,18 @@ for file in "${public_files[@]}"; do
   jq -e . "$file" >/dev/null || fail "invalid JSON: ${file}"
 done
 
+for pir_file in prod/pir.json stage/pir.json; do
+  jq --slurp --exit-status '
+    length == 1 and
+    (.[0] |
+      type == "object" and
+      .schema_version == 1 and
+      (.snapshot_height | type == "number" and . > 0 and floor == . and . % 10 == 0)
+    )
+  ' "$pir_file" >/dev/null \
+    || fail "invalid PIR config: ${pir_file} must be one schema v1 object with a positive 10-block snapshot_height"
+done
+
 [[ -f _headers && ! -L _headers ]] || fail "missing or unsafe headers file: _headers"
 
 if [[ -n "$(find pins -type l -print -quit)" ]]; then

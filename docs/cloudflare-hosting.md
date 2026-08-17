@@ -81,6 +81,8 @@ through `_headers`, complete deployment history, and production rollback:
 `scripts/build-cloudflare-pages.sh` is the only supported package builder. It:
 
 1. Parses every production, staging, and test JSON file.
+   Each `pir.json` must be one schema v1 object with a positive integer
+   `snapshot_height` on a 10-block boundary, matching the PIR bootstrap client.
 2. Requires every static config to point at the matching controlled-domain
    dynamic URL.
 3. Requires a byte-for-byte immutable copy of each current static config under
