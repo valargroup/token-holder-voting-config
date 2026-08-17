@@ -9,10 +9,16 @@ on:
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
+      - "pins/**"
+      - "_headers"
+      - "scripts/build-cloudflare-pages.sh"
+      - "scripts/verify-publication.sh"
+      - "scripts/rehearse-github-outage.sh"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
+      - ".github/workflows/deploy-cloudflare-pages.yml"
   push:
     branches: [main]
     paths:
@@ -22,10 +28,16 @@ on:
       - "stage/static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
+      - "pins/**"
+      - "_headers"
+      - "scripts/build-cloudflare-pages.sh"
+      - "scripts/verify-publication.sh"
+      - "scripts/rehearse-github-outage.sh"
       - ".github/workflows/verify-config.yml"
       - ".github/workflows/automerge-stage-config.yml"
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
+      - ".github/workflows/deploy-cloudflare-pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -74,3 +86,10 @@ jobs:
 
       - name: Verify staging duplicate static config
         run: voting-config verify --config stage/dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json
+
+      - name: Build serving snapshot
+        env:
+          SOURCE_REVISION: ${{ github.sha }}
+          PUBLICATION_MODE: local-test
+          PUBLISHED_AT: "2026-08-17T00:00:00Z"
+        run: scripts/build-cloudflare-pages.sh "${RUNNER_TEMP}/voting-config-site"
