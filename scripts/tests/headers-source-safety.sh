@@ -34,7 +34,6 @@ set +e
 build_output="$(
   cd "$fixture_repo"
   SOURCE_REVISION=local-test \
-  PUBLICATION_MODE=local-test \
     scripts/build-cloudflare-pages.sh "$output_dir" 2>&1
 )"
 build_status=$?
@@ -54,7 +53,6 @@ set +e
 build_output="$(
   cd "$fixture_repo"
   SOURCE_REVISION=local-test \
-  PUBLICATION_MODE=local-test \
     scripts/build-github-pages.sh "$github_output_dir" 2>&1
 )"
 build_status=$?

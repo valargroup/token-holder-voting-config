@@ -21,7 +21,6 @@ ln -s "$target_dir" "$output_link"
 set +e
 build_output="$(
   SOURCE_REVISION=local-test \
-  PUBLICATION_MODE=local-test \
     "${repo_root}/scripts/build-cloudflare-pages.sh" "$output_link" 2>&1
 )"
 build_status=$?

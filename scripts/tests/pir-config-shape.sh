@@ -28,7 +28,6 @@ expect_rejected() {
   build_output="$(
     cd "$test_repo"
     SOURCE_REVISION=local-test \
-    PUBLICATION_MODE=local-test \
       scripts/build-cloudflare-pages.sh "$output_dir" 2>&1
   )"
   build_status=$?

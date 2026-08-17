@@ -242,7 +242,7 @@ chmod +x voting-config
 
 ./voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
 ./voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json
-SOURCE_REVISION=local-test PUBLICATION_MODE=local-test \
+SOURCE_REVISION=local-test \
   scripts/build-cloudflare-pages.sh "$(mktemp -d)/site"
 ```
 

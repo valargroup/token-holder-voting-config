@@ -16,8 +16,6 @@ on:
       - "scripts/build-cloudflare-pages.sh"
       - "scripts/build-github-pages.sh"
       - "scripts/require-latest-main.sh"
-      - "scripts/require-reconciled-publication.sh"
-      - "scripts/rollback-publication.sh"
       - "scripts/verify-static-config-compatibility.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
@@ -45,8 +43,6 @@ on:
       - "scripts/build-cloudflare-pages.sh"
       - "scripts/build-github-pages.sh"
       - "scripts/require-latest-main.sh"
-      - "scripts/require-reconciled-publication.sh"
-      - "scripts/rollback-publication.sh"
       - "scripts/verify-static-config-compatibility.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
@@ -114,9 +110,7 @@ jobs:
 
       - name: Build serving snapshot
         env:
-          PIN_BASE_REVISION: ${{ github.event.pull_request.base.sha || github.event.before || format('{0}^', github.sha) }}
           SOURCE_REVISION: ${{ github.sha }}
-          PUBLICATION_MODE: local-test
           PUBLISHED_AT: "2026-08-17T00:00:00Z"
         run: scripts/build-cloudflare-pages.sh "${RUNNER_TEMP}/voting-config-site"
 

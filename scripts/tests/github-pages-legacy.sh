@@ -23,7 +23,6 @@ else
 fi
 
 SOURCE_REVISION=local-test \
-PUBLICATION_MODE=local-test \
 PUBLISHED_AT=2026-08-17T00:00:00Z \
   "${repo_root}/scripts/build-github-pages.sh" "$site_dir" >/dev/null
 

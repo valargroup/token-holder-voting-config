@@ -25,7 +25,6 @@ trap cleanup EXIT
 expected_dir="${test_root}/expected"
 port_file="${test_root}/port"
 SOURCE_REVISION=local-test \
-PUBLICATION_MODE=local-test \
   "${repo_root}/scripts/build-cloudflare-pages.sh" "$expected_dir" >/dev/null
 
 python3 - "$port_file" <<'PY' &

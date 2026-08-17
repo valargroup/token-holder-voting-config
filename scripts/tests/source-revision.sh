@@ -24,18 +24,13 @@ git config user.name codex-test
 git config user.email codex-test@example.invalid
 git add .
 git commit --quiet -m baseline
+previous_revision="$(git rev-parse HEAD)"
+git commit --quiet --allow-empty -m current
 head_revision="$(git rev-parse HEAD)"
-wrong_revision="0000000000000000000000000000000000000000"
-
-if [[ "$wrong_revision" == "$head_revision" ]]; then
-  wrong_revision="1111111111111111111111111111111111111111"
-fi
 
 set +e
 build_output="$(
-  PIN_BASE_REVISION="$head_revision" \
-  SOURCE_REVISION="$wrong_revision" \
-  PUBLICATION_MODE=automatic \
+  SOURCE_REVISION="$previous_revision" \
   PUBLISHED_AT=2026-08-17T00:00:00Z \
   PATH="${fixture_bin}:${PATH}" \
     scripts/build-cloudflare-pages.sh "${test_root}/mismatched-site" 2>&1
@@ -47,9 +42,7 @@ set -e
 grep -F "SOURCE_REVISION must match HEAD (${head_revision})" <<< "$build_output" >/dev/null \
   || fail "builder failed for an unexpected reason: ${build_output}"
 
-PIN_BASE_REVISION="$head_revision" \
 SOURCE_REVISION="$head_revision" \
-PUBLICATION_MODE=automatic \
 PUBLISHED_AT=2026-08-17T00:00:00Z \
 PATH="${fixture_bin}:${PATH}" \
   scripts/build-cloudflare-pages.sh "${test_root}/matching-site" >/dev/null

@@ -57,9 +57,7 @@ jobs:
 
       - name: Build serving snapshot
         env:
-          PIN_BASE_REVISION: ${{ github.event.before || format('{0}^', github.sha) }}
           SOURCE_REVISION: ${{ github.sha }}
-          PUBLICATION_MODE: automatic
         run: |
           scripts/build-github-pages.sh _site
           PROD_HASH=$(sha256sum prod/static-voting-config.json | awk '{print $1}')

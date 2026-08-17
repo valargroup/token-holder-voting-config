@@ -39,23 +39,20 @@ mkdir -p "$(dirname "$fixture_pin")"
 cp "$fixture_json" "$fixture_pin"
 git add "$fixture_pin"
 git commit --quiet -m 'add historical pin fixture'
-pin_base_revision="$(git rev-parse HEAD)"
 
 unlink "$fixture_pin"
 rmdir "$(dirname "$fixture_pin")"
 
 set +e
 build_output="$(
-  PIN_BASE_REVISION="$pin_base_revision" \
   SOURCE_REVISION=local-test \
-  PUBLICATION_MODE=local-test \
     scripts/build-cloudflare-pages.sh "${test_root}/site" 2>&1
 )"
 build_status=$?
 set -e
 
 [[ "$build_status" -ne 0 ]] || fail "builder accepted deletion of an immutable pin"
-grep -F "immutable pin from ${pin_base_revision} is missing: ${fixture_pin}" <<< "$build_output" >/dev/null \
+grep -F "immutable pin from repository history is missing: ${fixture_pin}" <<< "$build_output" >/dev/null \
   || fail "builder failed for an unexpected reason: ${build_output}"
 
 printf 'Immutable pin deletion test passed\n'

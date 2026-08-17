@@ -32,7 +32,6 @@ manifest_header_marker="${test_root}/served-stale-manifest-header"
 github_redirect_marker="${test_root}/redirect-through-github"
 redirect_final_header_marker="${test_root}/served-stale-redirect-final-header"
 SOURCE_REVISION=local-test \
-PUBLICATION_MODE=local-test \
 PUBLISHED_AT=2026-08-17T00:00:00Z \
   "${repo_root}/scripts/build-cloudflare-pages.sh" "$expected_dir" >/dev/null
 

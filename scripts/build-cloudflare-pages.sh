@@ -46,24 +46,19 @@ fi
 
 cd "$repo_root"
 
-publication_mode="${PUBLICATION_MODE:-automatic}"
-case "$publication_mode" in
-  automatic|manual-bootstrap|manual-emergency|local-test) ;;
-  *) fail "PUBLICATION_MODE must be automatic, manual-bootstrap, manual-emergency, or local-test" ;;
-esac
+source_revision="${SOURCE_REVISION:-}"
+[[ -n "$source_revision" ]] || fail "SOURCE_REVISION is required"
 
-pin_base_revision="${PIN_BASE_REVISION:-}"
-if [[ "$publication_mode" != "local-test" && -z "$pin_base_revision" ]]; then
-  fail "non-test publications require PIN_BASE_REVISION"
-fi
-if [[ -n "$pin_base_revision" ]]; then
-  git rev-parse --verify "${pin_base_revision}^{commit}" >/dev/null 2>&1 \
-    || fail "PIN_BASE_REVISION is not a commit: ${pin_base_revision}"
-
-  while IFS= read -r prior_pin; do
-    [[ -f "$prior_pin" ]] \
-      || fail "immutable pin from ${pin_base_revision} is missing: ${prior_pin}"
-  done < <(git ls-tree -r --name-only "$pin_base_revision" -- pins | sort)
+if [[ "$source_revision" != "local-test" ]]; then
+  [[ "$source_revision" =~ ^[0-9a-f]{40}$ ]] \
+    || fail "SOURCE_REVISION must be a full Git commit or local-test"
+  git rev-parse --verify "${source_revision}^{commit}" >/dev/null 2>&1 \
+    || fail "SOURCE_REVISION is not available in local history"
+  head_revision="$(git rev-parse HEAD)"
+  [[ "$source_revision" == "$head_revision" ]] \
+    || fail "SOURCE_REVISION must match HEAD (${head_revision})"
+  [[ -z "$(git status --porcelain --untracked-files=normal)" ]] \
+    || fail "publications require a clean working tree"
 fi
 
 public_files=(
@@ -98,6 +93,16 @@ done
 
 if [[ -n "$(find pins -type l -print -quit)" ]]; then
   fail "immutable pins must not contain symbolic links"
+fi
+
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+  while IFS= read -r historical_pin; do
+    [[ -n "$historical_pin" ]] || continue
+    [[ -f "$historical_pin" ]] \
+      || fail "immutable pin from repository history is missing: ${historical_pin}"
+  done < <(git log --format= --name-only HEAD -- pins | sort -u)
+elif [[ "$source_revision" != "local-test" ]]; then
+  fail "publication source is not a Git repository"
 fi
 
 prod_dynamic_url="https://voting.valargroup.dev/prod/dynamic-voting-config.json"
@@ -154,7 +159,7 @@ cmp -s test/prod-static-voting-config-duplicate.json "$prod_duplicate_pin" \
 cmp -s test/static-voting-config-duplicate.json "$stage_duplicate_pin" \
   || fail "${stage_duplicate_pin} must match the staging duplicate static config"
 
-if [[ "$publication_mode" != "local-test" ]]; then
+if [[ "$source_revision" != "local-test" ]]; then
   scripts/verify-static-config-compatibility.sh
 fi
 
@@ -183,34 +188,11 @@ while IFS= read -r published_pin; do
   write_sidecar "${published_pin#"$output_dir/"}"
 done < <(find "$output_dir/pins" -type f -name 'static-voting-config.json' -print | sort)
 
-source_revision="${SOURCE_REVISION:-}"
-if [[ -z "$source_revision" ]]; then
-  if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
-    fail "commit the publication snapshot or set SOURCE_REVISION for a local test"
-  fi
-  source_revision="$(git rev-parse HEAD)"
-fi
-
-if ! [[ "$source_revision" =~ ^[0-9a-f]{40}$|^local-test$ ]]; then
-  fail "SOURCE_REVISION must be a full Git commit or local-test"
-fi
-
-if [[ "$publication_mode" != "local-test" ]]; then
-  [[ "$source_revision" != "local-test" ]] \
-    || fail "non-test publications require a full Git commit"
-  [[ -z "$(git status --porcelain --untracked-files=normal)" ]] \
-    || fail "non-test publications require a clean working tree"
-  head_revision="$(git rev-parse HEAD)"
-  [[ "$source_revision" == "$head_revision" ]] \
-    || fail "SOURCE_REVISION must match HEAD (${head_revision})"
-fi
-
 published_at="${PUBLISHED_AT:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}"
 
 jq -n \
   --arg source_revision "$source_revision" \
   --arg published_at "$published_at" \
-  --arg publication_mode "$publication_mode" \
   --arg prod_dynamic_sha256 "$(sha256_file prod/dynamic-voting-config.json)" \
   --arg prod_pir_sha256 "$(sha256_file prod/pir.json)" \
   --arg prod_static_sha256 "$prod_static_sha256" \
@@ -223,7 +205,6 @@ jq -n \
     source_repository: "valargroup/token-holder-voting-config",
     source_revision: $source_revision,
     published_at: $published_at,
-    publication_mode: $publication_mode,
     configs: {
       prod: {
         dynamic_sha256: $prod_dynamic_sha256,

@@ -1,308 +1,187 @@
 # Cloudflare publication and outage runbook
 
-This repository remains the editorial source of truth. Cloudflare Pages is the
-durable serving surface. It is a direct-upload destination, not a cache in front
-of GitHub. A request for `voting.valargroup.dev` must not need GitHub or
-`raw.githubusercontent.com` to be reachable.
+`main` in this repository is the only source of truth for voting config.
+Cloudflare Pages stores and serves reviewed snapshots; it is not a cache in
+front of GitHub. Requests to `voting.valargroup.dev` do not need GitHub or
+`raw.githubusercontent.com` to be available.
 
-The Cloudflare workflow and infrastructure remain deliberately disabled until
-the scoped credentials, Pages project, and bootstrap deployment are ready. Do
-not enable or apply them from guessed or stale account identifiers.
+There is one publication path. A GitHub Actions job triggered by `main` builds
+and uploads the complete snapshot. Operators do not publish config directly to
+Cloudflare. During a GitHub outage, Cloudflare continues serving its current
+snapshot, but new config publication waits for GitHub to recover.
 
 ## Ownership
 
-| Concern | Owner | Contract |
-| --- | --- | --- |
-| Reviewed config | This repository's `main` branch | Pull requests, attestation, and existing config verification remain unchanged. |
-| Publication | `deploy-cloudflare-pages.yml` | A merge to `main` builds and uploads one complete, allowlisted snapshot. |
-| Runtime serving | Cloudflare Pages | Serves stored assets without a request-time GitHub origin. The last successful deployment remains active after a failed upload. |
-| Project and domain | `vote-infrastructure` production Terraform | Owns the Pages project and, only after a separate readiness gate, `voting.valargroup.dev`. |
-| Emergency publication | A scoped operator credential | Used only when GitHub cannot accept the urgent change. The same local commit must be reconciled to `main` after recovery. |
+| Concern | Owner |
+| --- | --- |
+| Reviewed config and publication authority | This repository's `main` branch |
+| Snapshot packaging and upload | `.github/workflows/deploy-cloudflare-pages.yml` |
+| Pages project, custom domain, and DNS | Production Terraform in `vote-infrastructure` |
+| Stored snapshot and request serving | Cloudflare Pages |
+| Legacy `.org` mirror | This repository's GitHub Pages workflows |
 
-Read-only inspection on 2026-08-17 resolved `valargroup.dev` to the active
-Cloudflare zone in account `152e2a8834283136c2f0575782b1b7aa`. No Pages
-projects exist in that account, and `voting.valargroup.dev` has no DNS record.
-The legacy `valargroup.org` zone is in a different Cloudflare account. Reconfirm
-all of these facts immediately before the first infrastructure apply.
+Before any infrastructure change, resolve the exact Cloudflare account,
+project, zone, and current Terraform state. The intended project is
+`token-holder-voting-config` in the account that owns `valargroup.dev`; the
+custom domain is `voting.valargroup.dev`. Import an existing live resource into
+Terraform rather than creating a duplicate.
 
-The existing `voting.valargroup.org` CNAME and GitHub Pages site remain a legacy
-mirror. Clients do not select between two mutable origins. Automatic client
-fallback could mix snapshots with different freshness and makes rollback
-behavior ambiguous. The controlled `.dev` domain always names Cloudflare Pages.
-The legacy mirror continues publishing current dynamic configs, but its
-previously documented static aliases keep their exact pre-migration bytes and
-checksums. It does not publish the canonical deployment manifest. New wallet
-releases must not pin those mutable `.org` paths. Before either GitHub Pages
-workflow packages an update, it verifies both dynamic configs against every
-frozen legacy static alias. A key rotation cannot remove the last legacy signer
-until clients pinned to that alias are retired.
-
-The same compatibility check verifies each environment's dynamic config
-against every immutable file under `pins/`. Because published pins cannot be
-deleted, all of them remain supported until an explicit retirement mechanism
-is designed and reviewed.
-
-## Consumer migration boundary
-
-The fleet watchdog, PIR deployment defaults, validator join tooling, and the
-updated vote-sdk admin defaults use `voting.valargroup.dev`. Deploy those
-changes only after the custom domain passes the readiness gate.
-
-Repository defaults do not replace existing GitHub Environment variables or
-host configuration. During rollout, update or remove the old overrides:
-
-- vote-sdk staging and production `VOTING_CONFIG_URL` use
-  `https://voting.valargroup.dev/stage/` and
-  `https://voting.valargroup.dev/prod/` respectively;
-- PIR `PIR_CONFIG_URL` uses the matching environment's `pir.json`, and its
-  legacy `VOTING_CONFIG_URL` uses the matching static config;
-- each watchdog's `WATCHDOG_CONFIG_URL` uses the matching static config.
-
-Redeploy or restart through each repository's normal workflow, then confirm the
-effective host file or application config no longer contains a GitHub Raw URL.
-
-Vizor, zodl-ios, and the Zend iOS and Android wallets currently ship a static
-config pinned to a GitHub Raw commit. Those signed binaries continue reading the
-raw-hosted static file and its raw-hosted dynamic URL. Each wallet needs a
-coordinated release that embeds the new immutable
-`pins/<environment>/<sha256>/static-voting-config.json` URL and checksum. Do not
-replace a wallet pin with the mutable `prod/static-voting-config.json` or
-`stage/static-voting-config.json` alias.
-
-Cloudflare documents direct upload from a local machine or CI, custom headers
-through `_headers`, complete deployment history, and production rollback:
-
-- <https://developers.cloudflare.com/pages/get-started/direct-upload/>
-- <https://developers.cloudflare.com/pages/configuration/headers/>
-- <https://developers.cloudflare.com/pages/configuration/rollbacks/>
+The existing `voting.valargroup.org` GitHub Pages site remains a compatibility
+mirror, not an automatic fallback. Its previously published static aliases keep
+their original bytes and checksums so existing Vizor, zodl, and other pinned
+callers are not broken. Its dynamic aliases continue to update. New consumers
+must use Cloudflare, because client fallback between two mutable hosts could mix
+snapshots with different freshness.
 
 ## Snapshot contract
 
-`scripts/build-cloudflare-pages.sh` is the only supported package builder. It:
+`scripts/build-cloudflare-pages.sh` is the only snapshot builder. It:
 
-1. Parses every production, staging, and test JSON file.
-   Each `pir.json` must be one schema v1 object with a positive integer
-   `snapshot_height` on a 10-block boundary, matching the PIR bootstrap client.
-2. Requires every static config to point at the matching controlled-domain
-   dynamic URL.
-3. Requires a byte-for-byte immutable copy of each current static config under
-   `pins/<environment>/<sha256>/`, or `pins/test/<environment>/<sha256>/` for
-   duplicate test configs.
-4. Copies an allowlist of public files. In particular, it cannot publish test
-   seed material or repository metadata.
-5. Generates static-config checksum sidecars and a deployment manifest with the
-   source revision and the production and staging hashes.
+1. Requires a clean checkout whose `SOURCE_REVISION` is exactly `HEAD`.
+2. Validates all production, staging, and test JSON, including the PIR schema.
+3. Requires static configs to use the matching `voting.valargroup.dev` dynamic
+   URL.
+4. Requires a content-addressed copy of every current static config under
+   `pins/` and rejects deletion of any pin found in reachable repository
+   history.
+5. Runs compatibility verification against every immutable pin and frozen
+   legacy alias.
+6. Copies only the public allowlist, adds checksum sidecars, and writes a
+   manifest containing the exact source revision and config hashes.
 
-Cloudflare Pages switches the production alias between versioned deployments.
-The post-deploy check compares every served file with the package, validates the
-source revision and cache headers, and confirms that the test seed returns 404.
-A stale HTTP 200 response is polled until the expected bytes and headers appear
-or the three-minute verification deadline expires.
-A failed build or upload leaves the preceding production deployment active. If
-upload is interrupted or post-deploy verification fails, cleanup polls the live
-deployment and rolls it back only when its manifest identifies this workflow's
-automatic revision. This avoids relying on a runner output that may not be
-written after Cloudflare accepts an upload, while leaving unrelated emergency
-publications untouched. The first deployment has no rollback target and must be
-verified on `pages.dev` before custom-domain attachment.
+CI uses full Git history so the immutable-pin check cannot be weakened by a
+caller-selected comparison revision. `SOURCE_REVISION=local-test` exists only
+for local fixture builds; the deployment workflow never uses it.
 
-The static and dynamic files are separate HTTP requests. A client can therefore
-read them on opposite sides of a deployment. Keep old trusted keys in the new
-dynamic config until all wallet releases that pin them are retired. Hosting
-atomicity does not replace that trust-key overlap rule.
+Cloudflare Pages creates a versioned deployment and changes the production
+alias as one operation. Individual JSON files are never uploaded separately,
+so readers see either the preceding snapshot or the new complete snapshot, not
+a partially copied directory. Static and dynamic files are still separate HTTP
+requests. Keep old trusted keys in a new dynamic config until every client that
+pins them has retired.
+
+The manifest is evidence about the repository commit and file hashes. It does
+not grant publication authority and does not need reconciliation with an older
+bootstrap deployment. The first enabled workflow run intentionally supersedes
+the existing bootstrap with the reviewed `main` snapshot.
 
 ## Cache and stale behavior
 
-| Path | Header | Intended behavior |
+| Path | Cache-Control | Behavior |
 | --- | --- | --- |
-| `prod/dynamic-voting-config.json`, `stage/dynamic-voting-config.json`, `pir.json`, deployment manifest | `max-age=60, must-revalidate, stale-if-error=86400` | Normal changes appear quickly. A cache that supports `stale-if-error` may reuse its last response for one day during a serving error. |
-| Current static aliases and test aliases | `max-age=300, must-revalidate, stale-if-error=86400` | Server tooling can follow the current static config without long cache lag. |
-| `pins/**` | `max-age=31536000, immutable` | A URL contains the file's SHA-256 and its bytes never change or disappear. |
+| Dynamic configs, PIR configs, manifest | `max-age=60, must-revalidate, stale-if-error=86400` | Changes appear quickly; caches may reuse a response during a serving error. |
+| Current static aliases and test aliases | `max-age=300, must-revalidate, stale-if-error=86400` | Mutable aliases refresh within five minutes. |
+| `pins/**` | `max-age=31536000, immutable` | The URL contains the file SHA-256 and its bytes cannot change or disappear. |
 
-Pages stores the last successful deployment until another deployment or an
-operator rollback. This is the primary stale-config behavior during a GitHub
-outage. New round publication pauses, but the previously published production
-and staging snapshots continue to serve. `stale-if-error` is extra client-side
-defense and is not the mechanism that removes the GitHub dependency.
+The durable outage behavior comes from the stored Pages deployment, not from
+`stale-if-error`. A GitHub outage pauses updates but does not affect reads from
+the active Cloudflare snapshot.
 
-## Provision and cut over
+## Enable the publisher
 
-Use two separate infrastructure applies. Review each plan against the exact
-Cloudflare account and `valargroup.dev` zone.
+The Pages resource and GitHub publisher have separate ownership. Complete these
+checks before setting `CLOUDFLARE_PAGES_ENABLED=true`:
 
-1. Reconfirm that `valargroup.dev` is active in account
-   `152e2a8834283136c2f0575782b1b7aa`, that `voting.valargroup.dev` is unused,
-   and that no project with the chosen name exists. Use a dedicated Terraform
-   token scoped to Pages writes for only that account. Cloudflare Pages creates
-   the CNAME automatically because the `.dev` zone is in the same account. If
-   the named project already exists, import it into
-   `cloudflare_pages_project.voting_config[0]` instead of creating a duplicate.
-2. In `vote-infrastructure/envs/production`, set
-   `create_voting_config_pages = true`, provide `cf_pages_api_token`, confirm
-   `cf_pages_account_id`, and leave `attach_voting_config_pages_domain = false`.
-   Apply this first. It creates the direct-upload project without changing DNS.
-3. Configure the protected GitHub environment
-   `cloudflare-pages-production`:
-   - variable `CLOUDFLARE_ACCOUNT_ID`
-   - variable `CLOUDFLARE_PAGES_PROJECT`
-   - variable `CLOUDFLARE_PAGES_ORIGIN`, using the exact `pages.dev` URL
-   - secret `CLOUDFLARE_API_TOKEN`
+1. Confirm the Pages project, domain association, and DNS record match the
+   reviewed `vote-infrastructure` Terraform state.
+2. Confirm the protected GitHub environment `cloudflare-pages-production` has:
+   - `CLOUDFLARE_ACCOUNT_ID`
+   - `CLOUDFLARE_PAGES_PROJECT`
+   - `CLOUDFLARE_PAGES_ORIGIN`
+   - `CLOUDFLARE_PAGES_CUSTOM_DOMAIN`
+   - a scoped `CLOUDFLARE_API_TOKEN` secret
+3. Confirm `main` contains the publisher and all required checks pass.
+4. Enable the repository gate and dispatch the workflow from `main` once.
+5. Verify the Pages origin and `https://voting.valargroup.dev` report the
+   dispatched source revision in `deployment-manifest.json`.
+6. Run the outage rehearsal before migrating server consumers.
 
-   Set the repository variable `CLOUDFLARE_PAGES_ENABLED=true` only after those
-   protected values exist. This repository-level gate is evaluated before the
-   job can read environment values.
-4. From the reviewed config commit, make the one-time bootstrap deployment
-   before merging the config change. Require a clean working tree, build with
-   `PUBLICATION_MODE=manual-bootstrap`, deploy it to the Pages production
-   branch, and verify the `pages.dev` origin with
-   `scripts/verify-publication.sh`. Record the commit and deployment IDs.
-
-   ```bash
-   bootstrap_root=$(mktemp -d)
-   PIN_BASE_REVISION=origin/main SOURCE_REVISION=$(git rev-parse HEAD) \
-     PUBLICATION_MODE=manual-bootstrap \
-     scripts/build-cloudflare-pages.sh "$bootstrap_root/site"
-   npx --yes wrangler@4.123.0 pages deploy "$bootstrap_root/site" \
-     --project-name "$CLOUDFLARE_PAGES_PROJECT" \
-     --branch main \
-     --commit-hash "$(git rev-parse HEAD)" \
-     --commit-dirty=false
-   scripts/verify-publication.sh "$CLOUDFLARE_PAGES_ORIGIN" \
-     "$bootstrap_root/site" "$(git rev-parse HEAD)"
-   ```
-
-5. Rehearse the staging outage and rollback against the Pages origin.
-6. Set `attach_voting_config_pages_domain = true` in a separately reviewed
-   Terraform plan. This associates `voting.valargroup.dev` with the Pages
-   project without changing the legacy `voting.valargroup.org` CNAME. A manual
-   CNAME without a Pages custom-domain association is not sufficient and can
-   return HTTP 522.
-7. Set `CLOUDFLARE_PAGES_CUSTOM_DOMAIN=https://voting.valargroup.dev` and verify
-   both the Pages origin and custom domain against the bootstrap package.
-8. Merge the exact reviewed config commit through the normal pull request path.
-   Confirm the automatic publisher advances the manifest to the merged revision
-   without changing the config hashes.
-9. Enable the external manifest uptime check and require the Cloudflare deploy
-   job before relying on the domain for production.
-10. Replace existing server-side URL overrides, deploy the server consumers,
-   and verify their effective configuration. Then ship wallet releases with the
-   new immutable Cloudflare pin. Existing wallet
-   binaries whose pinned static file still points to `raw.githubusercontent.com`
-   are not fixed by the new host.
-
-Cloudflare's custom-domain setup is documented at
-<https://developers.cloudflare.com/pages/configuration/custom-domains/>. The
-Pages Terraform resources are documented at
-<https://developers.cloudflare.com/api/terraform/resources/pages/subresources/projects/>.
+After enablement, every new `main` revision triggers the same workflow. The
+concurrency group serializes publishers, and a freshness check skips a queued
+revision when a newer `main` already exists.
 
 ## Normal publication
 
-The round attestation workflow continues opening its one-file GitHub pull
-request. After it merges, the Cloudflare workflow:
+The round attestation flow continues opening its normal one-file pull request.
+After that pull request merges, the Cloudflare workflow:
 
-1. Repeats the cryptographic config verification.
-2. Builds the complete production and staging snapshot.
-3. Direct-uploads the snapshot to the production branch of the Pages project.
-4. Compares every important served object with the local package.
+1. Repeats signature and compatibility verification.
+2. Builds one complete production, staging, test, and immutable-pin snapshot.
+3. Confirms the checked-out commit is still the latest `main` revision.
+4. Direct-uploads that snapshot to the Pages production branch.
+5. Polls the Pages origin and custom domain until all expected bytes, manifest
+   metadata, cache headers, CORS, and the absence of test seed material are
+   verified.
 
-Immediately before upload, after preloading Wrangler, the workflow queries the
-Cloudflare project API for its canonical production deployment and reads the
-manifest from that deployment's immutable Pages URL. Its source revision must
-be an ancestor of the `main` revision being published. The earlier canonical
-deployment record is used only as a rollback target. This avoids selecting a
-newer failed deployment or a deployment that has since been rolled back.
+No second writer or emergency upload path exists. If an urgent config change is
+needed while GitHub cannot accept it, continue serving the current snapshot and
+wait for GitHub recovery. Then use the normal reviewed pull request flow.
 
-Do not publish individual JSON objects. An upload failure leaves the preceding
-snapshot active and should be treated as a delayed publication, not as permission
-to bypass verification.
+## Failure and rollback
 
-## Emergency publication while GitHub is unavailable
+Failure semantics depend on where the job stopped:
 
-Use this only when an urgent config change cannot wait for GitHub recovery. A
-GitHub outage by itself does not require a republish because Pages continues
-serving the last good snapshot.
+- A validation, build, freshness, or pre-upload failure leaves Cloudflare
+  unchanged.
+- A rejected or interrupted upload normally leaves the previous deployment
+  active. Confirm the live manifest instead of assuming this.
+- An accepted upload switches to one complete snapshot. If post-deploy
+  verification fails, the workflow is red but the new deployment may already
+  be active. It is never a partial directory, but its headers or served bytes
+  may not match the package.
 
-1. Start from the source revision named by the live
-   `deployment-manifest.json` and save that exact SHA as
-   `published_revision`.
-2. Make the smallest config change locally and run the same `voting-config
-   verify` commands as CI. Obtain the normal maintainer review outside GitHub.
-3. Create a local commit so the emergency deployment has an immutable source
-   revision. Ensure `git status --short` is empty.
-4. Load a narrowly scoped operator token from macOS Keychain or a dedicated
-   operator Infisical project. Do not place it in a production service's shared
-   secret root, and do not print it.
-5. Build and deploy the complete snapshot:
+Post-deploy failure requires operator investigation; the workflow does not
+automatically roll back. This keeps rollback out of the publication state
+machine and avoids racing a valid deployment. Disable the repository publisher
+gate while investigating, inspect the Pages deployment history, and either fix
+forward through `main` or roll back the whole deployment in Cloudflare.
 
-```bash
-emergency_root=$(mktemp -d)
-PIN_BASE_REVISION="$published_revision" SOURCE_REVISION=$(git rev-parse HEAD) \
-  PUBLICATION_MODE=manual-emergency \
-  scripts/build-cloudflare-pages.sh "$emergency_root/site"
+To verify a rollback target:
 
-npx --yes wrangler@4.123.0 pages deploy "$emergency_root/site" \
-  --project-name "$CLOUDFLARE_PAGES_PROJECT" \
-  --branch main \
-  --commit-hash "$(git rev-parse HEAD)" \
-  --commit-dirty=false
+1. Record its `deployment-manifest.json`, including `source_revision` and
+   `published_at`, from the immutable Pages deployment URL.
+2. Check out that exact source revision in a clean worktree.
+3. Rebuild with those values:
 
-scripts/verify-publication.sh "$CLOUDFLARE_PAGES_ORIGIN" \
-  "$emergency_root/site" "$(git rev-parse HEAD)"
-scripts/verify-publication.sh https://voting.valargroup.dev \
-  "$emergency_root/site" "$(git rev-parse HEAD)"
-```
+   ```bash
+   rollback_root=$(mktemp -d)
+   SOURCE_REVISION=<source_revision> PUBLISHED_AT=<published_at> \
+     scripts/build-cloudflare-pages.sh "$rollback_root/site"
+   ```
 
-Record the Cloudflare deployment ID and local commit SHA. When GitHub recovers,
-push the exact commit through the normal pull request path. Do not recreate the
-change by hand. If the eventual reviewed result differs, deploy that complete
-snapshot and record which emergency deployment it superseded.
-Automatic publication remains blocked until the live emergency commit is an
-ancestor of `main`.
+4. Select that deployment in the Pages dashboard or use Cloudflare's documented
+   deployment rollback API.
+5. Run `scripts/verify-publication.sh` against both the Pages origin and custom
+   domain with the rebuilt package and source revision.
+
+Do not switch clients to `.org` as a rollback. Restore or advance the complete
+Cloudflare snapshot.
 
 ## Monitoring
 
-Before custom-domain cutover, all of these must be active:
+Before migrating server consumers, require all of the following:
 
-- The fleet watchdog's existing `config_refresh` check reads the environment's
-  static config and follows its controlled-domain dynamic URL. The Sentry event
-  must retain `service=watchdog`, `alert=infra_health`, and
-  `check=config_refresh` routing.
-- A watchdog JSON target and a Sentry Uptime monitor fetch
-  `https://voting.valargroup.dev/deployment-manifest.json` independently of the
-  GitHub Actions runner.
-- Publication alerts fire when the Cloudflare workflow fails or when the live
-  manifest does not reach the merged source revision within 15 minutes.
-- The monitor fetches both production and staging static and dynamic paths. It
-  checks HTTP 200, JSON decoding, manifest hashes, and CORS.
+- GitHub Actions alerts for a failed Cloudflare publication.
+- An external uptime check for
+  `https://voting.valargroup.dev/deployment-manifest.json`.
+- A manifest-lag alert when the live source revision does not reach merged
+  `main` within 15 minutes.
+- Checks that fetch production and staging static, dynamic, and PIR paths,
+  validate JSON and manifest hashes, and confirm CORS.
+- Existing watchdog `config_refresh` checks pointed at the matching Cloudflare
+  environment.
 
-Do not resolve a publication alert merely because GitHub recovered. Compare the
-live manifest revision and hashes with the intended snapshot first.
-
-## Rollback
-
-Cloudflare Pages keeps successful deployments. Select the preceding verified
-deployment in the Pages dashboard or call the documented deployment rollback
-API, then run `scripts/verify-publication.sh` against the package for that
-deployment. Rollback changes the whole production and staging snapshot.
-
-If the automatic rollback call itself fails, keep the publication alert open,
-roll back from a separately authenticated operator path, and verify the complete
-preceding package. Do not silently switch clients to the legacy `.org` mirror.
-
-After GitHub recovers, reconcile `main` with a normal revert or fix-forward pull
-request. Until that happens, a source-revision monitor should intentionally show
-that the serving revision differs from the tip of `main`.
-
-Cloudflare's rollback API is documented at
-<https://developers.cloudflare.com/api/resources/pages/subresources/projects/subresources/deployments/>.
+Do not close an alert merely because GitHub or Cloudflare recovered. Compare the
+live source revision and hashes with the intended snapshot first.
 
 ## Outage rehearsal
 
-Run the rehearsal against the `pages.dev` origin first, then the custom domain:
+Build a package from the same source revision and publication time as the live
+manifest, then test the Pages origin and custom domain:
 
 ```bash
 rehearsal_root=$(mktemp -d)
-SOURCE_REVISION=local-test PUBLICATION_MODE=local-test \
+SOURCE_REVISION=<live_source_revision> PUBLISHED_AT=<live_published_at> \
   scripts/build-cloudflare-pages.sh "$rehearsal_root/site"
 
 scripts/rehearse-github-outage.sh "$CLOUDFLARE_PAGES_ORIGIN" \
@@ -311,15 +190,35 @@ scripts/rehearse-github-outage.sh https://voting.valargroup.dev \
   "$rehearsal_root/site"
 ```
 
-The script forces only its GitHub Raw probe to loopback, proves that request
-fails, and then verifies the complete Cloudflare snapshot. It does not change
-DNS or `/etc/hosts`.
+The rehearsal isolates its GitHub Raw probe and then verifies the complete
+Cloudflare snapshot. It does not change DNS or `/etc/hosts`.
 
-For the stage gate, also restart the staging watchdog with its normal
+For the stage gate, restart the staging watchdog with
 `WATCHDOG_CONFIG_URL=https://voting.valargroup.dev/stage/static-voting-config.json`
-and confirm its immediate `config_refresh` succeeds while outbound GitHub Raw is
-blocked for that isolated test process or container. Wait through the alert
-grace period and confirm no config-refresh Sentry issue is created. Then deploy
-a harmless stage-only snapshot, roll it back in Pages, and confirm the manifest
-and stage bytes return to the preceding deployment. Repeat the read-only
-availability checks in production before declaring the cutover complete.
+while GitHub Raw is blocked for that isolated process. Confirm config refresh
+succeeds and no Sentry issue is created through the normal grace period.
+
+## Consumer migration
+
+Server consumers may use the mutable environment aliases after the publication
+and monitoring gates pass:
+
+- production `VOTING_CONFIG_URL` uses
+  `https://voting.valargroup.dev/prod/`;
+- staging `VOTING_CONFIG_URL` uses
+  `https://voting.valargroup.dev/stage/`;
+- PIR and watchdog URLs use the matching environment's `pir.json` and static
+  config.
+
+Wallets must embed the immutable
+`pins/<environment>/<sha256>/static-voting-config.json` URL and matching
+checksum. Existing Vizor and zodl builds pinned to GitHub Raw keep working and
+are not changed by this deployment, but they remain exposed to a GitHub outage
+until a new app release adopts the Cloudflare pin.
+
+Cloudflare reference documentation:
+
+- <https://developers.cloudflare.com/pages/get-started/direct-upload/>
+- <https://developers.cloudflare.com/pages/configuration/headers/>
+- <https://developers.cloudflare.com/pages/configuration/rollbacks/>
+- <https://developers.cloudflare.com/pages/configuration/custom-domains/>
