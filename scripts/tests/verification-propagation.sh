@@ -87,11 +87,11 @@ class Handler(BaseHTTPRequestHandler):
 
         cache_control = self.cache_control(request_path)
         if not include_body and request_path == "prod/pir.json" and not Handler.stale_prod_pir_header_sent:
-            cache_control = "public, max-age=86400"
+            cache_control = "public, max-age=600, must-revalidate, stale-if-error=86400"
             Handler.stale_prod_pir_header_sent = True
             prod_pir_header_marker.touch()
         if not include_body and request_path == "stage/pir.json" and not Handler.stale_stage_pir_header_sent:
-            cache_control = "public, max-age=86400"
+            cache_control = "public, max-age=60, must-revalidate"
             Handler.stale_stage_pir_header_sent = True
             stage_pir_header_marker.touch()
         if (
@@ -155,13 +155,13 @@ set -e
 grep -F 'Waiting for published bytes for prod/dynamic-voting-config.json' \
   <<< "$verify_output" >/dev/null \
   || fail "verification did not poll the stale response"
-grep -F 'Waiting for header for prod/pir.json: ^cache-control:.*max-age=60.*must-revalidate' \
+grep -F 'Waiting for header for prod/pir.json:' \
   <<< "$verify_output" >/dev/null \
   || fail "verification did not poll the stale production PIR cache header"
-grep -F 'Waiting for header for stage/pir.json: ^cache-control:.*max-age=60.*must-revalidate' \
+grep -F 'Waiting for header for stage/pir.json:' \
   <<< "$verify_output" >/dev/null \
   || fail "verification did not poll the stale staging PIR cache header"
-grep -F 'Waiting for header for stage/static-voting-config.json: ^cache-control:.*max-age=300.*must-revalidate' \
+grep -F 'Waiting for header for stage/static-voting-config.json:' \
   <<< "$verify_output" >/dev/null \
   || fail "verification did not poll the stale staging static cache header"
 

@@ -161,13 +161,17 @@ for path in "${paths[@]}"; do
   compare_path "$path"
 done
 
-header_contains prod/dynamic-voting-config.json '^cache-control:.*max-age=60.*must-revalidate'
-header_contains stage/dynamic-voting-config.json '^cache-control:.*max-age=60.*must-revalidate'
-header_contains prod/pir.json '^cache-control:.*max-age=60.*must-revalidate'
-header_contains stage/pir.json '^cache-control:.*max-age=60.*must-revalidate'
-header_contains prod/static-voting-config.json '^cache-control:.*max-age=300.*must-revalidate'
-header_contains stage/static-voting-config.json '^cache-control:.*max-age=300.*must-revalidate'
-header_contains "pins/prod/${prod_static_sha256}/static-voting-config.json" '^cache-control:.*max-age=31536000.*immutable'
+short_cache_pattern='^cache-control:[[:space:]]*public,[[:space:]]*max-age=60,[[:space:]]*must-revalidate,[[:space:]]*stale-if-error=86400[[:space:]]*$'
+static_cache_pattern='^cache-control:[[:space:]]*public,[[:space:]]*max-age=300,[[:space:]]*must-revalidate,[[:space:]]*stale-if-error=86400[[:space:]]*$'
+immutable_cache_pattern='^cache-control:[[:space:]]*public,[[:space:]]*max-age=31536000,[[:space:]]*immutable[[:space:]]*$'
+
+header_contains prod/dynamic-voting-config.json "$short_cache_pattern"
+header_contains stage/dynamic-voting-config.json "$short_cache_pattern"
+header_contains prod/pir.json "$short_cache_pattern"
+header_contains stage/pir.json "$short_cache_pattern"
+header_contains prod/static-voting-config.json "$static_cache_pattern"
+header_contains stage/static-voting-config.json "$static_cache_pattern"
+header_contains "pins/prod/${prod_static_sha256}/static-voting-config.json" "$immutable_cache_pattern"
 header_contains prod/dynamic-voting-config.json '^access-control-allow-origin:[[:space:]]*\*'
 
 if [[ -n "$expected_revision" ]]; then
