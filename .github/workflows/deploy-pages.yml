@@ -30,6 +30,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Install voting-config verifier
         run: |
           mkdir -p "${HOME}/.local/bin"
@@ -45,13 +47,13 @@ jobs:
         run: voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json
       - name: Build serving snapshot
         env:
+          PIN_BASE_REVISION: ${{ github.event.before || format('{0}^', github.sha) }}
           SOURCE_REVISION: ${{ github.sha }}
           PUBLICATION_MODE: automatic
         run: |
-          scripts/build-cloudflare-pages.sh _site
-          cp CNAME _site/CNAME
-          PROD_HASH=$(sha256sum _site/prod/static-voting-config.json | awk '{print $1}')
-          STAGE_HASH=$(sha256sum _site/stage/static-voting-config.json | awk '{print $1}')
+          scripts/build-github-pages.sh _site
+          PROD_HASH=$(sha256sum prod/static-voting-config.json | awk '{print $1}')
+          STAGE_HASH=$(sha256sum stage/static-voting-config.json | awk '{print $1}')
           echo "prod/static-voting-config.json sha256: ${PROD_HASH}"
           echo "stage/static-voting-config.json sha256: ${STAGE_HASH}"
           {

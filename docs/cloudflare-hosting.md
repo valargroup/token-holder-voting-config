@@ -29,6 +29,10 @@ The existing `voting.valargroup.org` CNAME and GitHub Pages site remain a legacy
 mirror. Clients do not select between two mutable origins. Automatic client
 fallback could mix snapshots with different freshness and makes rollback
 behavior ambiguous. The controlled `.dev` domain always names Cloudflare Pages.
+The legacy mirror continues publishing current dynamic configs, but its
+previously documented static aliases keep their exact pre-migration bytes and
+checksums. It does not publish the canonical deployment manifest. New wallet
+releases must not pin those mutable `.org` paths.
 
 ## Consumer migration boundary
 

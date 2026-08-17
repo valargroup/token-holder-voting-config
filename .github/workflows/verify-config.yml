@@ -12,6 +12,7 @@ on:
       - "pins/**"
       - "_headers"
       - "scripts/build-cloudflare-pages.sh"
+      - "scripts/build-github-pages.sh"
       - "scripts/require-latest-main.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
@@ -21,6 +22,7 @@ on:
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
       - ".github/workflows/deploy-cloudflare-pages.yml"
+      - "legacy/**"
   push:
     branches: [main]
     paths:
@@ -33,6 +35,7 @@ on:
       - "pins/**"
       - "_headers"
       - "scripts/build-cloudflare-pages.sh"
+      - "scripts/build-github-pages.sh"
       - "scripts/require-latest-main.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
@@ -42,6 +45,7 @@ on:
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
       - ".github/workflows/deploy-cloudflare-pages.yml"
+      - "legacy/**"
   workflow_dispatch:
 
 permissions:

@@ -31,6 +31,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Install voting-config verifier
         run: |
           mkdir -p "${HOME}/.local/bin"
@@ -54,15 +56,15 @@ jobs:
 
       - name: Build serving snapshot
         env:
+          PIN_BASE_REVISION: ${{ github.event.before || format('{0}^', github.sha) }}
           SOURCE_REVISION: ${{ github.sha }}
           PUBLICATION_MODE: automatic
         run: |
-          scripts/build-cloudflare-pages.sh _site
-          cp CNAME _site/CNAME
-          PROD_HASH=$(sha256sum _site/prod/static-voting-config.json | awk '{print $1}')
-          STAGE_HASH=$(sha256sum _site/stage/static-voting-config.json | awk '{print $1}')
-          PROD_DUPLICATE_HASH=$(sha256sum _site/test/prod-static-voting-config-duplicate.json | awk '{print $1}')
-          STAGE_DUPLICATE_HASH=$(sha256sum _site/test/static-voting-config-duplicate.json | awk '{print $1}')
+          scripts/build-github-pages.sh _site
+          PROD_HASH=$(sha256sum prod/static-voting-config.json | awk '{print $1}')
+          STAGE_HASH=$(sha256sum stage/static-voting-config.json | awk '{print $1}')
+          PROD_DUPLICATE_HASH=$(sha256sum test/prod-static-voting-config-duplicate.json | awk '{print $1}')
+          STAGE_DUPLICATE_HASH=$(sha256sum test/static-voting-config-duplicate.json | awk '{print $1}')
           echo "prod/static-voting-config.json sha256: ${PROD_HASH}"
           echo "stage/static-voting-config.json sha256: ${STAGE_HASH}"
           echo "test/prod-static-voting-config-duplicate.json sha256: ${PROD_DUPLICATE_HASH}"

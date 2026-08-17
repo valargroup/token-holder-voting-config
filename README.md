@@ -14,6 +14,10 @@ This repo serves environment-scoped configuration documents:
 
 The dynamic and static schemas implement [draft ZIP 1244](https://github.com/zcash/zips/pull/1244) "Shielded Voting Wallet API". The v1 file has no chain of trust; the dynamic config signs each round's election authority public key with an Ed25519 admin key whose public counterpart is fetched through the wallet's hash-pinned static config.
 
+The legacy `voting.valargroup.org` site continues publishing current dynamic
+configs, but its previously checksum-pinned static aliases are frozen at their
+pre-migration bytes. New releases must use the immutable `.dev/pins/` URLs.
+
 ## Dynamic Config Schema
 
 ```json
@@ -244,7 +248,7 @@ Four workflows guard the serving path:
 
 - [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It downloads the checksum-pinned `voting-config` binary from the `vote-sdk` v1.3.0-rc.2 GitHub release and runs `voting-config verify`.
 - [`deploy-cloudflare-pages.yml`](.github/workflows/deploy-cloudflare-pages.yml) publishes one versioned Cloudflare Pages snapshot and verifies the exact served bytes and headers. It is inert until the explicit repository enable flag and exact Cloudflare target are configured.
-- [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) retains the GitHub Pages transition mirror using the same allowlisted snapshot.
+- [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) retains the GitHub Pages transition mirror while freezing its previously checksum-pinned static aliases.
 - [`deploy-duplicate-static-config.yml`](.github/workflows/deploy-duplicate-static-config.yml) applies the same full-snapshot publisher when a test alias changes.
 
 The ownership model, rollout gates, failure behavior, rollback steps, and outage rehearsal are documented in [`docs/cloudflare-hosting.md`](docs/cloudflare-hosting.md).
