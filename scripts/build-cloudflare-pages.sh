@@ -169,6 +169,9 @@ if [[ "$publication_mode" != "local-test" ]]; then
     || fail "non-test publications require a full Git commit"
   [[ -z "$(git status --porcelain --untracked-files=normal)" ]] \
     || fail "non-test publications require a clean working tree"
+  head_revision="$(git rev-parse HEAD)"
+  [[ "$source_revision" == "$head_revision" ]] \
+    || fail "SOURCE_REVISION must match HEAD (${head_revision})"
 fi
 
 published_at="${PUBLISHED_AT:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}"
