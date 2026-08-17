@@ -223,6 +223,9 @@ outage_output="$(
   VERIFY_RETRY_MAX_TIME_SECONDS=2 \
   VERIFY_DEADLINE_SECONDS=10 \
   VERIFY_POLL_INTERVAL_SECONDS=0 \
+  http_proxy=http://127.0.0.1:1 \
+  https_proxy=http://127.0.0.1:1 \
+  NO_PROXY=127.0.0.1,localhost \
     "${repo_root}/scripts/rehearse-github-outage.sh" \
       "http://127.0.0.1:${port}" "$expected_dir" local-test 2>&1
 )"
