@@ -82,6 +82,8 @@ for file in "${public_files[@]}"; do
   jq -e . "$file" >/dev/null || fail "invalid JSON: ${file}"
 done
 
+[[ -f _headers && ! -L _headers ]] || fail "missing or unsafe headers file: _headers"
+
 if [[ -n "$(find pins -type l -print -quit)" ]]; then
   fail "immutable pins must not contain symbolic links"
 fi
