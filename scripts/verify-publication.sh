@@ -16,7 +16,8 @@ command -v jq >/dev/null || fail "jq is required"
 base_url="${1%/}"
 expected_dir="$(cd "$2" && pwd)"
 expected_revision="${3:-}"
-download_dir="$(mktemp -d -t voting-config-publication)"
+temp_root="${TMPDIR:-/tmp}"
+download_dir="$(mktemp -d "${temp_root%/}/voting-config-publication.XXXXXXXXXX")"
 trap 'rm -rf "$download_dir"' EXIT
 
 connect_timeout_seconds="${VERIFY_CONNECT_TIMEOUT_SECONDS:-10}"

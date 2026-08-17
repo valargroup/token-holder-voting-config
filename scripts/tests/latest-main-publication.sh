@@ -8,7 +8,9 @@ fail() {
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
-test_root="$(mktemp -d -t latest-main-publication-test)"
+# shellcheck disable=SC1091
+source "${script_dir}/lib/test-helpers.sh"
+test_root="$(make_test_temp_dir latest-main-publication-test)"
 trap 'rm -rf "$test_root"' EXIT
 remote_repo="${test_root}/remote.git"
 work_repo="${test_root}/work"
