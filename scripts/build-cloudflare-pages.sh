@@ -29,6 +29,8 @@ if [[ "$output_dir" == "$repo_root" || "$output_dir" == "$HOME" ]]; then
   fail "refusing to write into ${output_dir}"
 fi
 
+[[ ! -L "$output_dir" ]] || fail "refusing symbolic link output directory: ${output_dir}"
+
 mkdir -p "$output_dir"
 if [[ -n "$(find "$output_dir" -mindepth 1 -maxdepth 1 -print -quit)" ]]; then
   fail "output directory must be empty: ${output_dir}"
