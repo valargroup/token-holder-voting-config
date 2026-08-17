@@ -114,8 +114,9 @@ Cloudflare account and `valargroup.dev` zone.
 1. Reconfirm that `valargroup.dev` is active in account
    `152e2a8834283136c2f0575782b1b7aa`, that `voting.valargroup.dev` is unused,
    and that no project with the chosen name exists. Use a dedicated Terraform
-   token scoped to Pages writes for that account and DNS writes for only the
-   `.dev` zone. If the named project already exists, import it into
+   token scoped to Pages writes for only that account. Cloudflare Pages creates
+   the CNAME automatically because the `.dev` zone is in the same account. If
+   the named project already exists, import it into
    `cloudflare_pages_project.voting_config[0]` instead of creating a duplicate.
 2. In `vote-infrastructure/envs/production`, set
    `create_voting_config_pages = true`, provide `cf_pages_api_token`, confirm
