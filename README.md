@@ -10,7 +10,7 @@ This repo serves environment-scoped configuration documents:
 | [`prod/static-voting-config.json`](https://voting.valargroup.dev/prod/static-voting-config.json) | Production static config | Current production alias. Wallet releases must use its immutable `pins/prod/<sha256>/` copy. |
 | [`stage/dynamic-voting-config.json`](https://voting.valargroup.dev/stage/dynamic-voting-config.json) | Staging dynamic config, per-round signed registry | Active for staging wallets and test workflows. |
 | [`stage/static-voting-config.json`](https://voting.valargroup.dev/stage/static-voting-config.json) | Staging static config | Current staging alias. Staging releases should use its immutable `pins/stage/<sha256>/` copy. |
-| [`deployment-manifest.json`](https://voting.valargroup.dev/deployment-manifest.json) | Publication metadata | Identifies the complete snapshot's source revision, publication mode, and config hashes. |
+| [`deployment-manifest.json`](https://voting.valargroup.dev/deployment-manifest.json) | Publication metadata | Identifies the complete snapshot's source revision, publication time, and config hashes. |
 
 The dynamic and static schemas implement [draft ZIP 1244](https://github.com/zcash/zips/pull/1244) "Shielded Voting Wallet API". The v1 file has no chain of trust; the dynamic config signs each round's election authority public key with an Ed25519 admin key whose public counterpart is fetched through the wallet's hash-pinned static config.
 
