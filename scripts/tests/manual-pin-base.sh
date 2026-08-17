@@ -13,6 +13,7 @@ source "${script_dir}/lib/test-helpers.sh"
 test_root="$(make_test_temp_dir manual-pin-base-test)"
 trap 'rm -rf "$test_root"' EXIT
 test_repo="${test_root}/repo"
+fixture_bin="${script_dir}/fixtures"
 
 mkdir -p "$test_repo"
 rsync -a --exclude .git "$repo_root/" "$test_repo/"
@@ -43,6 +44,7 @@ PIN_BASE_REVISION="$head_revision" \
 SOURCE_REVISION="$head_revision" \
 PUBLICATION_MODE=manual-emergency \
 PUBLISHED_AT=2026-08-17T00:00:00Z \
+PATH="${fixture_bin}:${PATH}" \
   scripts/build-cloudflare-pages.sh "${test_root}/based-site" >/dev/null
 
 printf 'Manual publication pin base test passed\n'

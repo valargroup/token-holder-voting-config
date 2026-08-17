@@ -130,6 +130,10 @@ cmp -s prod/static-voting-config.json "$prod_pin" \
 cmp -s stage/static-voting-config.json "$stage_pin" \
   || fail "${stage_pin} must be byte-for-byte identical to stage/static-voting-config.json"
 
+if [[ "$publication_mode" != "local-test" ]]; then
+  scripts/verify-static-config-compatibility.sh
+fi
+
 for file in "${public_files[@]}"; do
   install -d "$output_dir/$(dirname "$file")"
   cp "$file" "$output_dir/$file"

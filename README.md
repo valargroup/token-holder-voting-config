@@ -17,7 +17,8 @@ The dynamic and static schemas implement [draft ZIP 1244](https://github.com/zca
 The legacy `voting.valargroup.org` site continues publishing current dynamic
 configs, but its previously checksum-pinned static aliases are frozen at their
 pre-migration bytes. Every dynamic update must remain authenticated by those
-frozen keys. New releases must use the immutable `.dev/pins/` URLs.
+frozen keys and by every published immutable `.dev` pin. New releases must use
+the immutable `.dev/pins/` URLs.
 
 ## Dynamic Config Schema
 

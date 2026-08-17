@@ -25,4 +25,17 @@ voting-config verify \
   --config stage/dynamic-voting-config.json \
   --static-config legacy/github-pages/test/static-voting-config-duplicate.json
 
-printf 'Verified dynamic configs against frozen GitHub Pages keys\n'
+pin_count=0
+while IFS= read -r pin; do
+  if ! [[ "$pin" =~ ^pins/(prod|stage)/[0-9a-f]{64}/static-voting-config\.json$ ]]; then
+    fail "unexpected immutable pin path: ${pin}"
+  fi
+  environment_name="${BASH_REMATCH[1]}"
+  voting-config verify \
+    --config "${environment_name}/dynamic-voting-config.json" \
+    --static-config "$pin"
+  pin_count=$((pin_count + 1))
+done < <(find pins -type f -name static-voting-config.json -print | sort)
+
+[[ "$pin_count" -gt 0 ]] || fail "at least one immutable static-config pin is required"
+printf 'Verified dynamic configs against frozen aliases and %d immutable pins\n' "$pin_count"

@@ -37,6 +37,11 @@ workflow packages an update, it verifies both dynamic configs against every
 frozen legacy static alias. A key rotation cannot remove the last legacy signer
 until clients pinned to that alias are retired.
 
+The same compatibility check verifies each environment's dynamic config
+against every immutable file under `pins/`. Because published pins cannot be
+deleted, all of them remain supported until an explicit retirement mechanism
+is designed and reviewed.
+
 ## Consumer migration boundary
 
 The fleet watchdog, PIR deployment defaults, validator join tooling, and the
