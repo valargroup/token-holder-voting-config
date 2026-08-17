@@ -192,11 +192,12 @@ request. After it merges, the Cloudflare workflow:
 3. Direct-uploads the snapshot to the production branch of the Pages project.
 4. Compares every important served object with the local package.
 
-Immediately before upload, the workflow also reads the manifest from the
-current deployment's immutable Pages URL. Its source revision must be an
-ancestor of the `main` revision being published. This prevents a queued run
-from replacing a manual emergency deployment before that exact emergency
-commit has been reconciled through `main`.
+Immediately before upload, after preloading Wrangler, the workflow queries the
+Cloudflare API for the then-current production deployment and reads the
+manifest from that deployment's immutable Pages URL. Its source revision must
+be an ancestor of the `main` revision being published. The earlier deployment
+record is used only as a rollback target. This prevents a queued run from
+relying on state captured before a manual emergency deployment landed.
 
 Do not publish individual JSON objects. An upload failure leaves the preceding
 snapshot active and should be treated as a delayed publication, not as permission

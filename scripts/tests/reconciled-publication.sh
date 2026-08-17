@@ -25,6 +25,7 @@ trap cleanup EXIT
 test_repo="${test_root}/repo"
 serve_root="${test_root}/serve"
 port_file="${test_root}/port"
+api_marker="${test_root}/api-requested"
 mkdir -p "$test_repo" "$serve_root"
 
 cd "$test_repo"
@@ -47,21 +48,48 @@ jq -n \
   '{schema_version: 1, source_revision: $source_revision, publication_mode: "manual-emergency"}' \
   > "${serve_root}/deployment-manifest.json"
 
-python3 - "$serve_root" "$port_file" <<'PY' &
-from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+python3 - "$serve_root" "$port_file" "$api_marker" <<'PY' &
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import json
 import sys
-
-
-class QuietHandler(SimpleHTTPRequestHandler):
-    def log_message(self, _format, *_args):
-        pass
+from urllib.parse import urlsplit
 
 
 serve_root = Path(sys.argv[1])
-handler = partial(QuietHandler, directory=str(serve_root))
-server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+api_marker = Path(sys.argv[3])
+
+
+class Handler(BaseHTTPRequestHandler):
+    def log_message(self, _format, *_args):
+        pass
+
+    def do_GET(self):
+        request_path = urlsplit(self.path).path
+        if request_path == "/client/v4/accounts/test-account/pages/projects/test-project/deployments":
+            api_marker.touch()
+            body = json.dumps({
+                "success": True,
+                "result": [{
+                    "id": "current-deployment",
+                    "url": f"http://127.0.0.1:{self.server.server_port}/deployment",
+                }],
+            }).encode()
+        elif request_path == "/deployment/deployment-manifest.json":
+            body = (serve_root / "deployment-manifest.json").read_bytes()
+        else:
+            self.send_response(404)
+            self.end_headers()
+            return
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+
+server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 Path(sys.argv[2]).write_text(str(server.server_port), encoding="utf-8")
 server.serve_forever()
 PY
@@ -72,12 +100,14 @@ for _ in {1..100}; do
   sleep 0.05
 done
 [[ -s "$port_file" ]] || fail "test server did not start"
-deployment_url="http://127.0.0.1:$(cat "$port_file")"
+api_base_url="http://127.0.0.1:$(cat "$port_file")/client/v4"
 
 set +e
 guard_output="$(
+  CLOUDFLARE_API_BASE_URL="$api_base_url" \
+  CLOUDFLARE_API_TOKEN=test-token \
   "${repo_root}/scripts/require-reconciled-publication.sh" \
-    "$deployment_url" "$main_revision" 2>&1
+    test-account test-project "$main_revision" 2>&1
 )"
 guard_status=$?
 set -e
@@ -86,10 +116,13 @@ set -e
 grep -F "refusing to supersede unreconciled manual-emergency publication ${emergency_revision}" \
   <<< "$guard_output" >/dev/null \
   || fail "guard failed for an unexpected reason: ${guard_output}"
+[[ -f "$api_marker" ]] || fail "guard did not query the current Cloudflare deployment"
 
 git merge --quiet --no-ff emergency -m reconcile
 reconciled_revision="$(git rev-parse HEAD)"
+CLOUDFLARE_API_BASE_URL="$api_base_url" \
+CLOUDFLARE_API_TOKEN=test-token \
 "${repo_root}/scripts/require-reconciled-publication.sh" \
-  "$deployment_url" "$reconciled_revision" >/dev/null
+  test-account test-project "$reconciled_revision" >/dev/null
 
 printf 'Emergency publication reconciliation test passed\n'
