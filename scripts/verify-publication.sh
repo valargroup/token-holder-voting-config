@@ -30,6 +30,7 @@ verification_deadline_seconds="${VERIFY_DEADLINE_SECONDS:-180}"
 poll_interval_seconds="${VERIFY_POLL_INTERVAL_SECONDS:-5}"
 github_outage_isolation="${VERIFY_GITHUB_OUTAGE_ISOLATION:-false}"
 gateway_fallback="${VERIFY_GATEWAY_FALLBACK:-false}"
+gateway_primary="${VERIFY_GATEWAY_PRIMARY:-false}"
 
 [[ "$connect_timeout_seconds" =~ ^[1-9][0-9]*$ ]] \
   || fail "VERIFY_CONNECT_TIMEOUT_SECONDS must be a positive integer"
@@ -53,6 +54,13 @@ case "$gateway_fallback" in
   true|false) ;;
   *) fail "VERIFY_GATEWAY_FALLBACK must be true or false" ;;
 esac
+case "$gateway_primary" in
+  true|false) ;;
+  *) fail "VERIFY_GATEWAY_PRIMARY must be true or false" ;;
+esac
+if [[ "$gateway_fallback" == true && "$gateway_primary" == true ]]; then
+  fail "VERIFY_GATEWAY_FALLBACK and VERIFY_GATEWAY_PRIMARY are mutually exclusive"
+fi
 
 curl_network_args=()
 if [[ "$github_outage_isolation" == true ]]; then
@@ -159,7 +167,26 @@ header_matches() {
     header_matches_once "$path" "$header_name" "$pattern"
 }
 
-paths=(
+response_header_matches_once() {
+  local path="$1"
+  local header_name="$2"
+  local pattern="$3"
+  local header_value
+  header_value="$(bounded_curl --fail --silent --show-error --location \
+    --output /dev/null --write-out "%header{${header_name}}" \
+    "${base_url}/${path}?response-header-check=$(date +%s)" | tr -d '\r')" || return 1
+  grep -Eiq "$pattern" <<< "$header_value"
+}
+
+response_header_matches() {
+  local path="$1"
+  local header_name="$2"
+  local pattern="$3"
+  wait_for_expected "response header for ${path}: ${header_name}=${pattern}" \
+    response_header_matches_once "$path" "$header_name" "$pattern"
+}
+
+source_paths=(
   prod/dynamic-voting-config.json
   prod/pir.json
   prod/static-voting-config.json
@@ -168,6 +195,10 @@ paths=(
   stage/static-voting-config.json
   test/prod-static-voting-config-duplicate.json
   test/static-voting-config-duplicate.json
+)
+
+paths=(
+  "${source_paths[@]}"
   prod/static-voting-config.json.sha256
   stage/static-voting-config.json.sha256
   test/prod-static-voting-config-duplicate.json.sha256
@@ -189,7 +220,11 @@ stage_duplicate_sha256="$(sha256_file "$expected_dir/test/static-voting-config-d
   || fail "expected snapshot is missing its staging duplicate immutable pin"
 
 while IFS= read -r expected_pin; do
-  paths+=("${expected_pin#"$expected_dir/"}")
+  pin_path="${expected_pin#"$expected_dir/"}"
+  paths+=("$pin_path")
+  if [[ "$pin_path" == */static-voting-config.json ]]; then
+    source_paths+=("$pin_path")
+  fi
 done < <(find "$expected_dir/pins" -type f -print | sort)
 
 for path in "${paths[@]}"; do
@@ -220,13 +255,20 @@ header_matches "pins/test/stage/${stage_duplicate_sha256}/static-voting-config.j
 header_matches prod/dynamic-voting-config.json access-control-allow-origin \
   '^[[:space:]]*\*[[:space:]]*$'
 if [[ "$gateway_fallback" == true ]]; then
-  header_matches stage/dynamic-voting-config.json x-voting-config-origin \
-    '^[[:space:]]*cloudflare[[:space:]]*$'
+  expected_gateway_origin='cloudflare'
+elif [[ "$gateway_primary" == true ]]; then
+  expected_gateway_origin='github'
 else
-  header_matches stage/dynamic-voting-config.json x-voting-config-origin \
+  response_header_matches stage/dynamic-voting-config.json x-voting-config-origin \
     '^[[:space:]]*(github|cloudflare)[[:space:]]*$'
 fi
-header_matches deployment-manifest.json x-voting-config-origin \
+if [[ -n "${expected_gateway_origin:-}" ]]; then
+  for source_path in "${source_paths[@]}"; do
+    response_header_matches "$source_path" x-voting-config-origin \
+      "^[[:space:]]*${expected_gateway_origin}[[:space:]]*$"
+  done
+fi
+response_header_matches deployment-manifest.json x-voting-config-origin \
   '^[[:space:]]*cloudflare[[:space:]]*$'
 
 if [[ -n "$expected_revision" ]]; then

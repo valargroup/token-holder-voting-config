@@ -21,6 +21,7 @@ on:
       - "scripts/verify-static-config-compatibility.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
+      - "scripts/wait-for-live-revision.sh"
       - "scripts/lib/**"
       - "scripts/tests/**"
       - ".github/workflows/verify-config.yml"
@@ -28,6 +29,7 @@ on:
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
       - ".github/workflows/deploy-cloudflare-pages.yml"
+      - ".github/workflows/monitor-cloudflare-publication.yml"
       - "legacy/**"
   push:
     branches: [main]
@@ -50,6 +52,7 @@ on:
       - "scripts/verify-static-config-compatibility.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
+      - "scripts/wait-for-live-revision.sh"
       - "scripts/lib/**"
       - "scripts/tests/**"
       - ".github/workflows/verify-config.yml"
@@ -57,6 +60,7 @@ on:
       - ".github/workflows/deploy-pages.yml"
       - ".github/workflows/deploy-duplicate-static-config.yml"
       - ".github/workflows/deploy-cloudflare-pages.yml"
+      - ".github/workflows/monitor-cloudflare-publication.yml"
       - "legacy/**"
   workflow_dispatch:
 

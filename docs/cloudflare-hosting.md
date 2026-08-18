@@ -198,6 +198,16 @@ Before migrating server consumers, require all of the following:
 - Existing watchdog `config_refresh` checks pointed at the matching Cloudflare
   environment.
 
+The `Monitor voting config publication` workflow runs after every `main` push
+and every ten minutes. The push-triggered run requires the new `main` revision
+to be observed in the live manifest within 15 minutes. Scheduled runs verify the
+current revision without inferring historical activation time. Their separate
+concurrency groups cannot cancel the push deadline check. Invalid manifest
+responses remain retryable until the deadline. The workflow then verifies the
+complete GitHub-primary snapshot and the forced Cloudflare fallback. The
+separate Sentry uptime monitor covers manifest availability when GitHub Actions
+cannot run.
+
 Do not close an alert merely because GitHub or Cloudflare recovered. Compare the
 live source revision and hashes with the intended snapshot first.
 
