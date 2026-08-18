@@ -16,6 +16,7 @@ on:
       - "CNAME"
       - "scripts/build-cloudflare-pages.sh"
       - "scripts/build-github-pages.sh"
+      - "scripts/cloudflare-gateway.mjs"
       - "scripts/require-latest-main.sh"
       - "scripts/verify-static-config-compatibility.sh"
       - "scripts/verify-publication.sh"
@@ -44,6 +45,7 @@ on:
       - "CNAME"
       - "scripts/build-cloudflare-pages.sh"
       - "scripts/build-github-pages.sh"
+      - "scripts/cloudflare-gateway.mjs"
       - "scripts/require-latest-main.sh"
       - "scripts/verify-static-config-compatibility.sh"
       - "scripts/verify-publication.sh"
@@ -73,6 +75,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
       - name: Install voting-config verifier
         run: |

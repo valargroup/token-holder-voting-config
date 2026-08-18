@@ -28,9 +28,11 @@ fi
 
 if [[ -n "$expected_revision" ]]; then
   VERIFY_GITHUB_OUTAGE_ISOLATION=true \
+  VERIFY_GATEWAY_FALLBACK=true \
     "$script_dir/verify-publication.sh" "$cloudflare_base_url" "$expected_dir" "$expected_revision"
 else
   VERIFY_GITHUB_OUTAGE_ISOLATION=true \
+  VERIFY_GATEWAY_FALLBACK=true \
     "$script_dir/verify-publication.sh" "$cloudflare_base_url" "$expected_dir"
 fi
 

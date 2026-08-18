@@ -32,6 +32,7 @@ manifest_header_marker="${test_root}/served-stale-manifest-header"
 test_alias_header_marker="${test_root}/checked-test-alias-headers"
 github_redirect_marker="${test_root}/redirect-through-github"
 redirect_final_header_marker="${test_root}/served-stale-redirect-final-header"
+fallback_header_marker="${test_root}/received-fallback-rehearsal-header"
 SOURCE_REVISION=local-test \
 PUBLISHED_AT=2026-08-17T00:00:00Z \
   "${repo_root}/scripts/build-cloudflare-pages.sh" "$expected_dir" >/dev/null
@@ -41,7 +42,7 @@ python3 - \
   "$prod_pir_header_marker" "$stage_pir_header_marker" \
   "$stage_static_header_marker" "$manifest_header_marker" \
   "$test_alias_header_marker" "$github_redirect_marker" \
-  "$redirect_final_header_marker" <<'PY' &
+  "$redirect_final_header_marker" "$fallback_header_marker" <<'PY' &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import sys
@@ -57,6 +58,7 @@ manifest_header_marker = Path(sys.argv[7])
 test_alias_header_marker = Path(sys.argv[8])
 github_redirect_marker = Path(sys.argv[9])
 redirect_final_header_marker = Path(sys.argv[10])
+fallback_header_marker = Path(sys.argv[11])
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -80,6 +82,11 @@ class Handler(BaseHTTPRequestHandler):
     def respond(self, include_body):
         request_path = urlsplit(self.path).path.lstrip("/")
         request_host = self.headers.get("Host", "").split(":", 1)[0]
+        forced_fallback = (
+            self.headers.get("X-Voting-Config-Rehearsal") == "github-outage"
+        )
+        if forced_fallback:
+            fallback_header_marker.touch()
         if request_path == "test/valar-test.seed.b64":
             self.send_response(404)
             self.end_headers()
@@ -161,6 +168,13 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", cache_control)
         self.send_header("Access-Control-Allow-Origin", "*")
+        response_origin = "cloudflare" if (
+            forced_fallback
+            or request_path == "deployment-manifest.json"
+            or request_path.endswith(".sha256")
+        ) else "github"
+        self.send_header("X-Voting-Config-Origin", response_origin)
+        self.send_header("X-Voting-Config-Revision", "local-test")
         self.end_headers()
         if include_body:
             self.wfile.write(body)
@@ -244,6 +258,8 @@ outage_output="$(
 grep -F 'GitHub remained isolated while the Cloudflare snapshot was verified.' \
   <<< "$outage_output" >/dev/null \
   || fail "outage rehearsal did not verify the isolated snapshot: ${outage_output}"
+[[ -f "$fallback_header_marker" ]] \
+  || fail "outage rehearsal did not force the gateway fallback"
 
 curl_home="${test_root}/curl-home"
 mkdir "$curl_home"
@@ -295,5 +311,10 @@ grep -Fqx \
   '        run: scripts/verify-publication.sh https://voting.valargroup.dev _site "${GITHUB_SHA}"' \
   "${repo_root}/.github/workflows/deploy-cloudflare-pages.yml" \
   || fail "Cloudflare workflow must always verify the canonical custom domain"
+# shellcheck disable=SC2016
+grep -Fqx \
+  '        run: scripts/rehearse-github-outage.sh https://voting.valargroup.dev _site "${GITHUB_SHA}"' \
+  "${repo_root}/.github/workflows/deploy-cloudflare-pages.yml" \
+  || fail "Cloudflare workflow must always rehearse the canonical fallback"
 
 printf 'Publication propagation test passed\n'

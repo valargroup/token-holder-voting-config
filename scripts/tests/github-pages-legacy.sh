@@ -45,6 +45,8 @@ done
 
 [[ ! -e "${site_dir}/deployment-manifest.json" ]] \
   || fail "legacy mirror must not publish the canonical deployment manifest"
+[[ ! -e "${site_dir}/_worker.js" ]] \
+  || fail "legacy mirror must not publish the Cloudflare gateway"
 cmp -s "${repo_root}/CNAME" "${site_dir}/CNAME" \
   || fail "legacy mirror is missing its CNAME"
 cmp -s "${repo_root}/prod/dynamic-voting-config.json" \

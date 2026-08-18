@@ -90,6 +90,8 @@ for pir_file in prod/pir.json stage/pir.json; do
 done
 
 [[ -f _headers && ! -L _headers ]] || fail "missing or unsafe headers file: _headers"
+[[ -f scripts/cloudflare-gateway.mjs && ! -L scripts/cloudflare-gateway.mjs ]] \
+  || fail "missing or unsafe Cloudflare gateway: scripts/cloudflare-gateway.mjs"
 
 if [[ -n "$(find pins -type l -print -quit)" ]]; then
   fail "immutable pins must not contain symbolic links"
@@ -171,6 +173,8 @@ done
 install -d "$output_dir/pins"
 cp -R pins/. "$output_dir/pins/"
 cp _headers "$output_dir/_headers"
+sed "s/__SOURCE_REVISION__/${source_revision}/g" \
+  scripts/cloudflare-gateway.mjs > "$output_dir/_worker.js"
 
 write_sidecar() {
   local relative_path="$1"
@@ -201,7 +205,7 @@ jq -n \
   --arg stage_static_sha256 "$stage_static_sha256" \
   '{
     schema_version: 1,
-    serving_model: "cloudflare-pages-direct-upload",
+    serving_model: "github-primary-cloudflare-pages-fallback",
     source_repository: "valargroup/token-holder-voting-config",
     source_revision: $source_revision,
     published_at: $published_at,

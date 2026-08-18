@@ -14,12 +14,14 @@ test_root="$(make_test_temp_dir headers-source-safety-test)"
 trap 'rm -rf "$test_root"' EXIT
 fixture_repo="${test_root}/repo"
 output_dir="${test_root}/site"
+gateway_output_dir="${test_root}/gateway-site"
 github_output_dir="${test_root}/github-site"
 
 mkdir -p "${fixture_repo}/scripts"
 cp \
   "${repo_root}/scripts/build-cloudflare-pages.sh" \
   "${repo_root}/scripts/build-github-pages.sh" \
+  "${repo_root}/scripts/cloudflare-gateway.mjs" \
   "${fixture_repo}/scripts/"
 cp -R \
   "${repo_root}/prod" \
@@ -47,6 +49,29 @@ grep -F 'missing or unsafe headers file: _headers' <<< "$build_output" >/dev/nul
 
 unlink "${fixture_repo}/_headers"
 cp "${repo_root}/_headers" "${fixture_repo}/_headers"
+unlink "${fixture_repo}/scripts/cloudflare-gateway.mjs"
+ln -s "${repo_root}/scripts/cloudflare-gateway.mjs" \
+  "${fixture_repo}/scripts/cloudflare-gateway.mjs"
+
+set +e
+build_output="$(
+  cd "$fixture_repo"
+  SOURCE_REVISION=local-test \
+    scripts/build-cloudflare-pages.sh "$gateway_output_dir" 2>&1
+)"
+build_status=$?
+set -e
+
+[[ "$build_status" -ne 0 ]] || fail "builder accepted a symbolic link gateway"
+grep -F 'missing or unsafe Cloudflare gateway: scripts/cloudflare-gateway.mjs' \
+  <<< "$build_output" >/dev/null \
+  || fail "builder rejected the gateway for an unexpected reason: ${build_output}"
+[[ ! -e "${gateway_output_dir}/_worker.js" ]] \
+  || fail "builder copied a symbolic link gateway"
+
+unlink "${fixture_repo}/scripts/cloudflare-gateway.mjs"
+cp "${repo_root}/scripts/cloudflare-gateway.mjs" \
+  "${fixture_repo}/scripts/cloudflare-gateway.mjs"
 ln -s "${repo_root}/CNAME" "${fixture_repo}/CNAME"
 
 set +e

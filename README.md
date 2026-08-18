@@ -1,6 +1,6 @@
 # token-holder-voting-config
 
-Service discovery and round authentication for shielded voting infrastructure. The reviewed files on `main` are the source of truth. Complete snapshots are published to Cloudflare Pages so wallets can find vote servers, PIR endpoints, and authenticated round metadata without depending on GitHub at request time. `voting.valargroup.dev` is the canonical host. The existing `voting.valargroup.org` GitHub Pages site remains a legacy mirror and is not an automatic client fallback.
+Service discovery and round authentication for shielded voting infrastructure. The reviewed files on `main` are the source of truth. `voting.valargroup.dev` is a Cloudflare gateway that reads each active snapshot from GitHub Raw first and automatically serves the byte-identical Cloudflare Pages copy when GitHub fails. The existing `voting.valargroup.org` GitHub Pages site remains a legacy mirror and is not an automatic client fallback.
 
 This repo serves environment-scoped configuration documents:
 
@@ -146,7 +146,7 @@ Bringing a vote server or PIR operator into rotation does not require a chain de
 2. Operator opens a PR adding their entry to the environment's `dynamic-voting-config.json` (`prod/` for production, `stage/` for staging).
 3. CI verifies every dynamic-config round signature against the matching environment's `static-voting-config.json` `trusted_keys`.
 4. Maintainer reviews and merges.
-5. The deploy workflows verify the config again before publishing a complete Cloudflare Pages snapshot and the transition GitHub Pages mirror.
+5. The deploy workflows verify the config again before publishing a complete Cloudflare gateway deployment and the transition GitHub Pages mirror.
 
 Removing an operator or changing an operator URL follows the same PR flow.
 
@@ -251,7 +251,7 @@ SOURCE_REVISION=local-test \
 Four workflows guard the serving path:
 
 - [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It downloads the checksum-pinned `voting-config` binary from the `vote-sdk` v1.3.0-rc.2 GitHub release and runs `voting-config verify`.
-- [`deploy-cloudflare-pages.yml`](.github/workflows/deploy-cloudflare-pages.yml) publishes one versioned Cloudflare Pages snapshot and verifies the exact served bytes and headers. It is inert until the explicit repository enable flag and exact Cloudflare target are configured.
+- [`deploy-cloudflare-pages.yml`](.github/workflows/deploy-cloudflare-pages.yml) publishes one versioned gateway and fallback snapshot, verifies the exact served bytes and headers, and forces the GitHub-outage path once. It is inert until the explicit repository enable flag and exact Cloudflare target are configured.
 - [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) retains the GitHub Pages transition mirror while freezing its previously checksum-pinned static aliases.
 - [`deploy-duplicate-static-config.yml`](.github/workflows/deploy-duplicate-static-config.yml) applies the same full-snapshot publisher when a test alias changes.
 

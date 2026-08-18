@@ -88,3 +88,6 @@ jobs:
 
       - name: Verify canonical custom domain
         run: scripts/verify-publication.sh https://voting.valargroup.dev _site "${GITHUB_SHA}"
+
+      - name: Rehearse GitHub origin outage
+        run: scripts/rehearse-github-outage.sh https://voting.valargroup.dev _site "${GITHUB_SHA}"
