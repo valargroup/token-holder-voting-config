@@ -397,8 +397,12 @@ grep -Fqx \
   "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml" \
   || fail "push deadline monitors must be isolated from freshness monitors"
 [[ "$(grep -Fxc '      cancel-in-progress: true' \
-  "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml")" -eq 2 ]] \
-  || fail "both monitor concurrency groups must retire superseded work"
+  "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml")" -eq 1 ]] \
+  || fail "only the stale freshness retirement job may cancel freshness work"
+grep -Fqx \
+  "      cancel-in-progress: \${{ github.event_name == 'push' }}" \
+  "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml" \
+  || fail "scheduled freshness checks must be allowed to reach their deadline"
 grep -Fqx \
   "          ref: \${{ github.event_name == 'push' && github.sha || 'main' }}" \
   "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml" \

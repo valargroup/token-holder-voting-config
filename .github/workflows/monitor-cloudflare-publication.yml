@@ -32,7 +32,7 @@ jobs:
     timeout-minutes: 25
     concurrency:
       group: cloudflare-pages-monitor-${{ github.event_name == 'push' && 'push' || 'freshness' }}
-      cancel-in-progress: true
+      cancel-in-progress: ${{ github.event_name == 'push' }}
     steps:
       - name: Record monitor start
         id: monitor_start
