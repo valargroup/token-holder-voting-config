@@ -112,6 +112,51 @@ for (const primaryFetch of [
 }
 
 {
+  const assets = assetBinding();
+  const { response } = await gateway(
+    "stage/dynamic-voting-config.json",
+    async () => {
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"partial":'));
+          setTimeout(() => controller.error(new Error("upstream reset")), 0);
+        },
+      });
+      return new Response(body);
+    },
+    assets
+  );
+  assert.equal(await response.text(), '{"origin":"cloudflare"}\n');
+  assert.equal(response.headers.get("x-voting-config-origin"), "cloudflare");
+  assert.equal(assets.requests.length, 1);
+}
+
+{
+  const assets = assetBinding();
+  const { response } = await gateway(
+    "stage/dynamic-voting-config.json",
+    async (request) => {
+      const body = new ReadableStream({
+        start(controller) {
+          request.signal.addEventListener(
+            "abort",
+            () => controller.error(new DOMException("timed out", "AbortError")),
+            { once: true }
+          );
+        },
+      });
+      return new Response(body);
+    },
+    assets,
+    {},
+    { timeoutMs: 5 }
+  );
+  assert.equal(await response.text(), '{"origin":"cloudflare"}\n');
+  assert.equal(response.headers.get("x-voting-config-origin"), "cloudflare");
+  assert.equal(assets.requests.length, 1);
+}
+
+{
   let primaryCalls = 0;
   const assets = assetBinding();
   const { response } = await gateway(

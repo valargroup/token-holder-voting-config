@@ -2,10 +2,11 @@
 
 `main` in this repository is the only source of truth for voting config.
 `voting.valargroup.dev` terminates at Cloudflare Pages. Its Pages Worker routes
-source-backed config requests to GitHub Raw first. A timeout, network error, or
-non-success response automatically falls back to the byte-identical copy in
-the active Pages deployment. Generated manifests and checksum sidecars are
-served from Pages directly.
+source-backed config requests to GitHub Raw first. The 2.5-second primary
+deadline covers both response headers and complete body consumption. A timeout,
+network error, or non-success response automatically falls back to the
+byte-identical copy in the active Pages deployment. Generated manifests and
+checksum sidecars are served from Pages directly.
 
 The gateway and fallback are pinned to the same exact `main` revision. They
 cannot select different versions of a file. There is one publication path. A
