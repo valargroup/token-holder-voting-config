@@ -105,7 +105,16 @@ async function fetchPrimary(
   });
 
   try {
-    return await fetchImpl(primaryRequest);
+    const primary = await fetchImpl(primaryRequest);
+    if (!primary.ok || request.method === "HEAD") {
+      return primary;
+    }
+
+    const body = await primary.arrayBuffer();
+    return new Response(body, {
+      status: primary.status,
+      statusText: primary.statusText,
+    });
   } finally {
     clearTimeout(timeout);
   }
