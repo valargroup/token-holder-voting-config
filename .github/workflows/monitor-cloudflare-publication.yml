@@ -1,0 +1,95 @@
+name: Monitor voting config publication
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "3-59/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  VOTE_SDK_TAG: v1.3.0-rc.2
+  VOTING_CONFIG_ASSET: voting-config-linux-amd64
+  VOTING_CONFIG_SHA256: 40c2be2b97e27f2743f9f34107be7c21d9acd9d918bfda7ce61e0070d2f9fb77
+
+jobs:
+  retire_stale_freshness:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: cloudflare-pages-monitor-freshness
+      cancel-in-progress: true
+    steps:
+      - name: Retire stale freshness monitor
+        run: echo "Retired stale freshness monitor"
+
+  monitor:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    concurrency:
+      group: cloudflare-pages-monitor-${{ github.event_name == 'push' && 'push' || 'freshness' }}
+      cancel-in-progress: ${{ github.event_name == 'push' }}
+    steps:
+      - name: Record monitor start
+        id: monitor_start
+        run: echo "epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'push' && github.sha || 'main' }}
+
+      - name: Restore voting-config verifier
+        id: verifier-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/bin/voting-config
+          key: voting-config-${{ runner.os }}-${{ runner.arch }}-${{ env.VOTE_SDK_TAG }}-${{ env.VOTING_CONFIG_SHA256 }}
+
+      - name: Install voting-config verifier
+        if: steps.verifier-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "${HOME}/.local/bin"
+          curl -fsSL \
+            "https://github.com/valargroup/vote-sdk/releases/download/${VOTE_SDK_TAG}/${VOTING_CONFIG_ASSET}" \
+            -o "${HOME}/.local/bin/voting-config"
+          echo "${VOTING_CONFIG_SHA256}  ${HOME}/.local/bin/voting-config" | sha256sum -c -
+          chmod +x "${HOME}/.local/bin/voting-config"
+
+      - name: Add verifier to PATH
+        run: echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+
+      - name: Require publication within 15 minutes
+        id: publication
+        env:
+          PUBLICATION_REQUIRE_ON_TIME: ${{ github.event_name == 'push' && 'true' || 'false' }}
+        run: |
+          source_revision="$(git rev-parse HEAD)"
+          published_at="$(scripts/wait-for-live-revision.sh \
+            https://voting.valargroup.dev \
+            "${source_revision}" \
+            "${{ steps.monitor_start.outputs.epoch }}" \
+            900)"
+          echo "published_at=${published_at}" >> "${GITHUB_OUTPUT}"
+          echo "source_revision=${source_revision}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build expected snapshot
+        env:
+          SOURCE_REVISION: ${{ steps.publication.outputs.source_revision }}
+          PUBLISHED_AT: ${{ steps.publication.outputs.published_at }}
+        run: scripts/build-cloudflare-pages.sh "${RUNNER_TEMP}/voting-config-monitor-site"
+
+      - name: Verify GitHub-primary publication
+        env:
+          EXPECTED_REVISION: ${{ steps.publication.outputs.source_revision }}
+          VERIFY_GATEWAY_PRIMARY: "true"
+        run: scripts/verify-publication.sh https://voting.valargroup.dev "${RUNNER_TEMP}/voting-config-monitor-site" "${EXPECTED_REVISION}"
+
+      - name: Verify Cloudflare fallback publication
+        env:
+          EXPECTED_REVISION: ${{ steps.publication.outputs.source_revision }}
+        run: scripts/rehearse-github-outage.sh https://voting.valargroup.dev "${RUNNER_TEMP}/voting-config-monitor-site" "${EXPECTED_REVISION}"

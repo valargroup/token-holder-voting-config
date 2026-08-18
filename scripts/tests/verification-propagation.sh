@@ -33,6 +33,8 @@ test_alias_header_marker="${test_root}/checked-test-alias-headers"
 github_redirect_marker="${test_root}/redirect-through-github"
 redirect_final_header_marker="${test_root}/served-stale-redirect-final-header"
 fallback_header_marker="${test_root}/received-fallback-rehearsal-header"
+normal_fallback_marker="${test_root}/served-normal-cloudflare-origin"
+corrupt_primary_marker="${test_root}/served-corrupt-primary-response"
 SOURCE_REVISION=local-test \
 PUBLISHED_AT=2026-08-17T00:00:00Z \
   "${repo_root}/scripts/build-cloudflare-pages.sh" "$expected_dir" >/dev/null
@@ -42,7 +44,8 @@ python3 - \
   "$prod_pir_header_marker" "$stage_pir_header_marker" \
   "$stage_static_header_marker" "$manifest_header_marker" \
   "$test_alias_header_marker" "$github_redirect_marker" \
-  "$redirect_final_header_marker" "$fallback_header_marker" <<'PY' &
+  "$redirect_final_header_marker" "$fallback_header_marker" \
+  "$normal_fallback_marker" "$corrupt_primary_marker" <<'PY' &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import sys
@@ -59,6 +62,8 @@ test_alias_header_marker = Path(sys.argv[8])
 github_redirect_marker = Path(sys.argv[9])
 redirect_final_header_marker = Path(sys.argv[10])
 fallback_header_marker = Path(sys.argv[11])
+normal_fallback_marker = Path(sys.argv[12])
+corrupt_primary_marker = Path(sys.argv[13])
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -80,7 +85,8 @@ class Handler(BaseHTTPRequestHandler):
         return "public, max-age=60, must-revalidate, stale-if-error=86400"
 
     def respond(self, include_body):
-        request_path = urlsplit(self.path).path.lstrip("/")
+        request_url = urlsplit(self.path)
+        request_path = request_url.path.lstrip("/")
         request_host = self.headers.get("Host", "").split(":", 1)[0]
         forced_fallback = (
             self.headers.get("X-Voting-Config-Rehearsal") == "github-outage"
@@ -117,6 +123,12 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         body = candidate.read_bytes()
+        if (
+            corrupt_primary_marker.exists()
+            and request_path == "prod/pir.json"
+            and request_url.query.startswith("source-check=")
+        ):
+            body = b"{}\n"
         if request_path == "prod/dynamic-voting-config.json" and not Handler.stale_sent:
             body = b"{}\n"
             Handler.stale_sent = True
@@ -172,6 +184,10 @@ class Handler(BaseHTTPRequestHandler):
             forced_fallback
             or request_path == "deployment-manifest.json"
             or request_path.endswith(".sha256")
+            or (
+                normal_fallback_marker.exists()
+                and request_path == "prod/pir.json"
+            )
         ) else "github"
         self.send_header("X-Voting-Config-Origin", response_origin)
         self.send_header("X-Voting-Config-Revision", "local-test")
@@ -306,6 +322,54 @@ grep -F 'verification deadline expired while waiting for published bytes for pro
   <<< "$outage_output" >/dev/null \
   || fail "GitHub-dependent endpoint failed for an unexpected reason: ${outage_output}"
 
+unlink "$github_redirect_marker"
+touch "$normal_fallback_marker"
+set +e
+primary_output="$(
+  VERIFY_GATEWAY_PRIMARY=true \
+  VERIFY_CONNECT_TIMEOUT_SECONDS=1 \
+  VERIFY_MAX_TIME_SECONDS=1 \
+  VERIFY_RETRY_COUNT=0 \
+  VERIFY_RETRY_DELAY_SECONDS=0 \
+  VERIFY_RETRY_MAX_TIME_SECONDS=1 \
+  VERIFY_DEADLINE_SECONDS=5 \
+  VERIFY_POLL_INTERVAL_SECONDS=0 \
+    "${repo_root}/scripts/verify-publication.sh" \
+      "http://127.0.0.1:${port}" "$expected_dir" local-test 2>&1
+)"
+primary_status=$?
+set -e
+
+[[ "$primary_status" -ne 0 ]] \
+  || fail "primary verification accepted the Cloudflare fallback origin"
+grep -F 'verification deadline expired while waiting for github response bytes for prod/pir.json' \
+  <<< "$primary_output" >/dev/null \
+  || fail "primary verification failed for an unexpected reason: ${primary_output}"
+
+unlink "$normal_fallback_marker"
+touch "$corrupt_primary_marker"
+set +e
+primary_output="$(
+  VERIFY_GATEWAY_PRIMARY=true \
+  VERIFY_CONNECT_TIMEOUT_SECONDS=1 \
+  VERIFY_MAX_TIME_SECONDS=1 \
+  VERIFY_RETRY_COUNT=0 \
+  VERIFY_RETRY_DELAY_SECONDS=0 \
+  VERIFY_RETRY_MAX_TIME_SECONDS=1 \
+  VERIFY_DEADLINE_SECONDS=5 \
+  VERIFY_POLL_INTERVAL_SECONDS=0 \
+    "${repo_root}/scripts/verify-publication.sh" \
+      "http://127.0.0.1:${port}" "$expected_dir" local-test 2>&1
+)"
+primary_status=$?
+set -e
+
+[[ "$primary_status" -ne 0 ]] \
+  || fail "primary verification accepted bytes from a different response"
+grep -F 'verification deadline expired while waiting for github response bytes for prod/pir.json' \
+  <<< "$primary_output" >/dev/null \
+  || fail "primary byte verification failed for an unexpected reason: ${primary_output}"
+
 # shellcheck disable=SC2016
 grep -Fqx \
   '        run: scripts/verify-publication.sh https://voting.valargroup.dev _site "${GITHUB_SHA}"' \
@@ -316,5 +380,43 @@ grep -Fqx \
   '        run: scripts/rehearse-github-outage.sh https://voting.valargroup.dev _site "${GITHUB_SHA}"' \
   "${repo_root}/.github/workflows/deploy-cloudflare-pages.yml" \
   || fail "Cloudflare workflow must always rehearse the canonical fallback"
+grep -Fqx \
+  "    if: github.ref == 'refs/heads/main'" \
+  "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml" \
+  || fail "manual publication monitoring must be restricted to main"
+grep -Fqx \
+  '  retire_stale_freshness:' \
+  "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml" \
+  || fail "push monitoring must retire stale freshness work"
+grep -Fqx \
+  '      group: cloudflare-pages-monitor-freshness' \
+  "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml" \
+  || fail "stale freshness work must use its own concurrency group"
+grep -Fqx \
+  "      group: cloudflare-pages-monitor-\${{ github.event_name == 'push' && 'push' || 'freshness' }}" \
+  "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml" \
+  || fail "push deadline monitors must be isolated from freshness monitors"
+[[ "$(grep -Fxc '      cancel-in-progress: true' \
+  "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml")" -eq 1 ]] \
+  || fail "only the stale freshness retirement job may cancel freshness work"
+grep -Fqx \
+  "      cancel-in-progress: \${{ github.event_name == 'push' }}" \
+  "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml" \
+  || fail "scheduled freshness checks must be allowed to reach their deadline"
+grep -Fqx \
+  "          ref: \${{ github.event_name == 'push' && github.sha || 'main' }}" \
+  "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml" \
+  || fail "non-push monitors must check out the latest main revision"
+if grep -Fq 'GITHUB_SHA' \
+  "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml"; then
+  fail "monitor verification must use the selected checkout revision"
+fi
+grep -Fq 'steps.monitor_start.outputs.epoch' \
+  "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml" \
+  || fail "push publication deadlines must use the monitor start time"
+if grep -Fq -- '--format=%ct' \
+  "${repo_root}/.github/workflows/monitor-cloudflare-publication.yml"; then
+  fail "push publication deadlines must not use the Git commit timestamp"
+fi
 
 printf 'Publication propagation test passed\n'
