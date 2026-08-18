@@ -29,6 +29,7 @@ retry_max_time_seconds="${VERIFY_RETRY_MAX_TIME_SECONDS:-120}"
 verification_deadline_seconds="${VERIFY_DEADLINE_SECONDS:-180}"
 poll_interval_seconds="${VERIFY_POLL_INTERVAL_SECONDS:-5}"
 github_outage_isolation="${VERIFY_GITHUB_OUTAGE_ISOLATION:-false}"
+gateway_fallback="${VERIFY_GATEWAY_FALLBACK:-false}"
 
 [[ "$connect_timeout_seconds" =~ ^[1-9][0-9]*$ ]] \
   || fail "VERIFY_CONNECT_TIMEOUT_SECONDS must be a positive integer"
@@ -48,6 +49,10 @@ case "$github_outage_isolation" in
   true|false) ;;
   *) fail "VERIFY_GITHUB_OUTAGE_ISOLATION must be true or false" ;;
 esac
+case "$gateway_fallback" in
+  true|false) ;;
+  *) fail "VERIFY_GATEWAY_FALLBACK must be true or false" ;;
+esac
 
 curl_network_args=()
 if [[ "$github_outage_isolation" == true ]]; then
@@ -55,6 +60,10 @@ if [[ "$github_outage_isolation" == true ]]; then
   # shellcheck disable=SC1091
   source "${script_dir}/lib/github-outage-curl.sh"
   curl_network_args=("${github_outage_curl_args[@]}")
+fi
+curl_request_args=()
+if [[ "$gateway_fallback" == true ]]; then
+  curl_request_args=(--header 'X-Voting-Config-Rehearsal: github-outage')
 fi
 
 verification_deadline=$((SECONDS + verification_deadline_seconds))
@@ -82,6 +91,7 @@ bounded_curl() {
 
   curl \
     "${curl_network_args[@]}" \
+    "${curl_request_args[@]}" \
     --connect-timeout "$connect_timeout_seconds" \
     --max-time "$request_max_time" \
     --retry "$retry_count" \
@@ -209,8 +219,19 @@ header_matches "pins/test/stage/${stage_duplicate_sha256}/static-voting-config.j
   cache-control "$immutable_cache_pattern"
 header_matches prod/dynamic-voting-config.json access-control-allow-origin \
   '^[[:space:]]*\*[[:space:]]*$'
+if [[ "$gateway_fallback" == true ]]; then
+  header_matches stage/dynamic-voting-config.json x-voting-config-origin \
+    '^[[:space:]]*cloudflare[[:space:]]*$'
+else
+  header_matches stage/dynamic-voting-config.json x-voting-config-origin \
+    '^[[:space:]]*(github|cloudflare)[[:space:]]*$'
+fi
+header_matches deployment-manifest.json x-voting-config-origin \
+  '^[[:space:]]*cloudflare[[:space:]]*$'
 
 if [[ -n "$expected_revision" ]]; then
+  header_matches stage/dynamic-voting-config.json x-voting-config-revision \
+    "^[[:space:]]*${expected_revision}[[:space:]]*$"
   jq -e --arg expected "$expected_revision" '.source_revision == $expected' \
     "$download_dir/deployment-manifest.json" >/dev/null \
     || fail "deployment manifest does not identify ${expected_revision}"

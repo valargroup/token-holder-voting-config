@@ -1,23 +1,30 @@
 # Cloudflare publication and outage runbook
 
 `main` in this repository is the only source of truth for voting config.
-Cloudflare Pages stores and serves reviewed snapshots; it is not a cache in
-front of GitHub. Requests to `voting.valargroup.dev` do not need GitHub or
-`raw.githubusercontent.com` to be available.
+`voting.valargroup.dev` terminates at Cloudflare Pages. Its Pages Worker routes
+source-backed config requests to GitHub Raw first. A timeout, network error, or
+non-success response automatically falls back to the byte-identical copy in
+the active Pages deployment. Generated manifests and checksum sidecars are
+served from Pages directly.
 
-There is one publication path. A GitHub Actions job triggered by `main` builds
-and uploads the complete snapshot. Operators do not publish config directly to
-Cloudflare. During a GitHub outage, Cloudflare continues serving its current
-snapshot, but new config publication waits for GitHub to recover.
+The gateway and fallback are pinned to the same exact `main` revision. They
+cannot select different versions of a file. There is one publication path. A
+GitHub Actions job triggered by `main` builds and uploads the complete gateway
+deployment; operators do not publish config directly to Cloudflare.
+
+This protects reads from a GitHub Raw outage. It does not make the canonical
+URL independent of Cloudflare. If Cloudflare DNS, TLS, Pages, or the Worker
+runtime is unavailable, `voting.valargroup.dev` is unavailable too.
 
 ## Ownership
 
 | Concern | Owner |
 | --- | --- |
 | Reviewed config and publication authority | This repository's `main` branch |
-| Snapshot packaging and upload | `.github/workflows/deploy-cloudflare-pages.yml` |
+| Gateway code, snapshot packaging, and upload | This repository and `.github/workflows/deploy-cloudflare-pages.yml` |
 | Pages project, custom domain, and DNS | Production Terraform in `vote-infrastructure` |
-| Stored snapshot and request serving | Cloudflare Pages |
+| Edge gateway and stored fallback | Cloudflare Pages |
+| Primary file origin | GitHub Raw at the deployment's exact source revision |
 | Legacy `.org` mirror | This repository's GitHub Pages workflows |
 
 Before any infrastructure change, resolve the exact Cloudflare account,
@@ -30,8 +37,8 @@ The existing `voting.valargroup.org` GitHub Pages site remains a compatibility
 mirror, not an automatic fallback. Its previously published static aliases keep
 their original bytes and checksums so existing Vizor, zodl, and other pinned
 callers are not broken. Its dynamic aliases continue to update. New consumers
-must use Cloudflare, because client fallback between two mutable hosts could mix
-snapshots with different freshness.
+must use `voting.valargroup.dev`. The gateway owns origin selection so clients
+do not mix snapshots with different freshness.
 
 ## Snapshot contract
 
@@ -46,17 +53,19 @@ snapshots with different freshness.
    history.
 5. Runs compatibility verification against every immutable pin and frozen
    legacy alias.
-6. Copies only the public allowlist, adds checksum sidecars, and writes a
-   manifest containing the exact source revision and config hashes.
+6. Copies only the public allowlist, adds checksum sidecars, writes a manifest,
+   and embeds the exact source revision in the Pages gateway.
 
 CI uses full Git history so the immutable-pin check cannot be weakened by a
 caller-selected comparison revision. `SOURCE_REVISION=local-test` exists only
 for local fixture builds; the deployment workflow never uses it.
 
 Cloudflare Pages creates a versioned deployment and changes the production
-alias as one operation. Individual JSON files are never uploaded separately,
-so readers see either the preceding snapshot or the new complete snapshot, not
-a partially copied directory. Static and dynamic files are still separate HTTP
+alias as one operation. Before that switch, both the GitHub primary and Pages
+fallback use the preceding revision. After it, both use the new revision.
+Individual JSON files are never activated separately, so a delayed deployment
+continues serving the previous complete snapshot instead of partially
+publishing a newer one. Static and dynamic files are still separate HTTP
 requests. Keep old trusted keys in a new dynamic config until every client that
 pins them has retired.
 
@@ -73,9 +82,11 @@ the existing bootstrap with the reviewed `main` snapshot.
 | Current static aliases and test aliases | `max-age=300, must-revalidate, stale-if-error=86400` | Mutable aliases refresh within five minutes. |
 | `pins/**` | `max-age=31536000, immutable` | The URL contains the file SHA-256 and its bytes cannot change or disappear. |
 
-The durable outage behavior comes from the stored Pages deployment, not from
-`stale-if-error`. A GitHub outage pauses updates but does not affect reads from
-the active Cloudflare snapshot.
+The Worker applies these headers to both origins; Pages `_headers` rules do not
+apply to Worker-generated responses. Durable GitHub-outage behavior comes from
+the stored Pages deployment, not from `stale-if-error`. The response headers
+identify the selected origin as `X-Voting-Config-Origin: github` or
+`cloudflare`, and identify the active revision as `X-Voting-Config-Revision`.
 
 ## Enable the publisher
 
@@ -95,7 +106,8 @@ checks before setting `CLOUDFLARE_PAGES_ENABLED=true`:
 4. Enable the repository gate and dispatch the workflow from `main` once.
 5. Verify the Pages origin and `https://voting.valargroup.dev` report the
    dispatched source revision in `deployment-manifest.json`.
-6. Run the outage rehearsal before migrating server consumers.
+6. Confirm a normal source-backed request reports the GitHub origin and run the
+   forced fallback rehearsal before migrating server consumers.
 
 After enablement, every new `main` revision triggers the same workflow. The
 concurrency group serializes publishers, and a freshness check skips a queued
@@ -113,6 +125,8 @@ After that pull request merges, the Cloudflare workflow:
 5. Polls the Pages origin and custom domain until all expected bytes, manifest
    metadata, cache headers, CORS, and the absence of test seed material are
    verified.
+6. Forces the gateway to bypass GitHub and repeats the complete canonical-domain
+   verification against the Pages fallback.
 
 No second writer or emergency upload path exists. If an urgent config change is
 needed while GitHub cannot accept it, continue serving the current snapshot and
@@ -130,6 +144,13 @@ Failure semantics depend on where the job stopped:
   verification fails, the workflow is red but the new deployment may already
   be active. It is never a partial directory, but its headers or served bytes
   may not match the package.
+- A GitHub Raw timeout, network error, or non-success status makes a
+  source-backed request use the Pages copy of the same revision.
+- A GitHub control-plane outage can prevent merges or workflow execution. The
+  currently active deployment continues serving its existing revision.
+- If both GitHub Raw and the Pages asset binding fail, the gateway returns 503.
+- A total Cloudflare edge, DNS, TLS, Pages, or Worker outage makes the canonical
+  URL unavailable. There is no client-side switch to `.org`.
 
 Post-deploy failure requires operator investigation; the workflow does not
 automatically roll back. This keeps rollback out of the publication state
@@ -167,6 +188,12 @@ Before migrating server consumers, require all of the following:
   `main` within 15 minutes.
 - Checks that fetch production and staging static, dynamic, and PIR paths,
   validate JSON and manifest hashes, and confirm CORS.
+- A normal source-backed check that records `X-Voting-Config-Origin`; sustained
+  `cloudflare` responses mean the GitHub primary is degraded. The manifest and
+  generated sidecars always report `cloudflare`.
+- A forced-fallback check that sends
+  `X-Voting-Config-Rehearsal: github-outage` and requires
+  `X-Voting-Config-Origin: cloudflare` plus the expected bytes.
 - Existing watchdog `config_refresh` checks pointed at the matching Cloudflare
   environment.
 
@@ -189,8 +216,10 @@ scripts/rehearse-github-outage.sh https://voting.valargroup.dev \
   "$rehearsal_root/site"
 ```
 
-The rehearsal isolates its GitHub Raw probe and then verifies the complete
-Cloudflare snapshot. It does not change DNS or `/etc/hosts`.
+The rehearsal first proves that GitHub Raw is isolated from the verifier. It
+then sends the reserved rehearsal header, which makes the live Worker bypass
+GitHub, and verifies the complete Pages snapshot and its origin header. It does
+not change DNS, `/etc/hosts`, or production state.
 
 For the stage gate, restart the staging watchdog with
 `WATCHDOG_CONFIG_URL=https://voting.valargroup.dev/stage/static-voting-config.json`
@@ -213,10 +242,12 @@ Wallets must embed the immutable
 `pins/<environment>/<sha256>/static-voting-config.json` URL and matching
 checksum. Existing Vizor and zodl builds pinned to GitHub Raw keep working and
 are not changed by this deployment, but they remain exposed to a GitHub outage
-until a new app release adopts the Cloudflare pin.
+until a new app release adopts the `voting.valargroup.dev` pin.
 
 Cloudflare reference documentation:
 
 - <https://developers.cloudflare.com/pages/get-started/direct-upload/>
+- <https://developers.cloudflare.com/pages/functions/advanced-mode/>
 - <https://developers.cloudflare.com/pages/configuration/headers/>
 - <https://developers.cloudflare.com/pages/configuration/custom-domains/>
+- <https://developers.cloudflare.com/workers/runtime-apis/fetch/>

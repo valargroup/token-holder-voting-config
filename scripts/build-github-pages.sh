@@ -51,5 +51,6 @@ cname_source="${repo_root}/CNAME"
   || fail "CNAME must contain voting.valargroup.org"
 cp "$cname_source" "${output_dir}/CNAME"
 unlink "${output_dir}/deployment-manifest.json"
+unlink "${output_dir}/_worker.js"
 
 printf 'Built GitHub Pages compatibility snapshot in %s\n' "$output_dir"
