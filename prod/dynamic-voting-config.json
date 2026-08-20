@@ -79,6 +79,17 @@
     "vote_server": "v1"
   },
   "rounds": {
+    "379342917754f4ae238f90a44d819417532d32c1ade5e14fca85ef3edd68a439": {
+      "auth_version": 2,
+      "ea_pk": "0kIVqs5YMFRk+jQ7QV4XVisvLW9E/VX1AqLytd3l8wo=",
+      "signatures": [
+        {
+          "key_id": "valargroup",
+          "alg": "ed25519",
+          "sig": "GCY4JCfSoiWk9zSvDmEGTKShoJYFAh2hn7L/fg9s5QFQ+RXFA+VaG7mr1F/5AmJ8Q/ELoNKOJwTOdm1233CBBQ=="
+        }
+      ]
+    },
     "3fda6c83b054e77c637cdb40f77448289742460ff16f0202229af3c00894d71b": {
       "auth_version": 1,
       "ea_pk": "vLZJEsvRcqLUY9D1NP+B2AUJbwzucbqa/RFZrgxX248=",
