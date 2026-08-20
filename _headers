@@ -24,6 +24,12 @@
 /stage/static-voting-config.json
   Cache-Control: public, max-age=300, must-revalidate, stale-if-error=86400
 
+/prod/v2-static-voting-config.json
+  Cache-Control: public, max-age=300, must-revalidate, stale-if-error=86400
+
+/stage/v2-static-voting-config.json
+  Cache-Control: public, max-age=300, must-revalidate, stale-if-error=86400
+
 /test/*
   Cache-Control: public, max-age=300, must-revalidate, stale-if-error=86400
 

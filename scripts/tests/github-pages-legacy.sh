@@ -53,6 +53,14 @@ cmp -s "${repo_root}/prod/dynamic-voting-config.json" \
   "${site_dir}/prod/dynamic-voting-config.json" \
   || fail "legacy mirror did not retain current dynamic config publication"
 
+# v2 static configs have no pre-migration bytes to freeze, so the mirror serves
+# the current files rather than a legacy alias.
+for environment_name in prod stage; do
+  cmp -s "${repo_root}/${environment_name}/v2-static-voting-config.json" \
+    "${site_dir}/${environment_name}/v2-static-voting-config.json" \
+    || fail "legacy mirror did not publish the current ${environment_name} v2 static config"
+done
+
 cname_trigger_count="$(awk '$0 == "      - \"CNAME\"" { count++ } END { print count + 0 }' \
   "${repo_root}/.github/workflows/verify-config.yml")"
 [[ "$cname_trigger_count" -eq 2 ]] \

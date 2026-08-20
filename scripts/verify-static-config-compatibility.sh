@@ -27,7 +27,7 @@ voting-config verify \
 
 pin_count=0
 while IFS= read -r pin; do
-  if ! [[ "$pin" =~ ^pins/(test/)?(prod|stage)/[0-9a-f]{64}/static-voting-config\.json$ ]]; then
+  if ! [[ "$pin" =~ ^pins/(test/)?(prod|stage)/[0-9a-f]{64}/(v2-)?static-voting-config\.json$ ]]; then
     fail "unexpected immutable pin path: ${pin}"
   fi
   environment_name="${BASH_REMATCH[2]}"
@@ -39,3 +39,7 @@ done < <(find pins -type f -name static-voting-config.json -print | sort)
 
 [[ "$pin_count" -gt 0 ]] || fail "at least one immutable static-config pin is required"
 printf 'Verified dynamic configs against frozen aliases and %d immutable pins\n' "$pin_count"
+
+# v2 pins are skipped by the loop above (it selects v1 pins by name) and are
+# verified through the projection shim instead.
+"${script_dir}/verify-v2-static-configs.sh"

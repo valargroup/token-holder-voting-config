@@ -22,6 +22,7 @@ cp \
   "${repo_root}/scripts/build-cloudflare-pages.sh" \
   "${repo_root}/scripts/build-github-pages.sh" \
   "${repo_root}/scripts/cloudflare-gateway.mjs" \
+  "${repo_root}/scripts/verify-trusted-key-parity.sh" \
   "${fixture_repo}/scripts/"
 cp -R \
   "${repo_root}/prod" \

@@ -7,9 +7,11 @@ const SOURCE_PATHS = new Set([
   "prod/dynamic-voting-config.json",
   "prod/pir.json",
   "prod/static-voting-config.json",
+  "prod/v2-static-voting-config.json",
   "stage/dynamic-voting-config.json",
   "stage/pir.json",
   "stage/static-voting-config.json",
+  "stage/v2-static-voting-config.json",
   "test/prod-static-voting-config-duplicate.json",
   "test/static-voting-config-duplicate.json",
 ]);
@@ -17,15 +19,17 @@ const SOURCE_PATHS = new Set([
 const ASSET_ONLY_PATHS = new Set([
   "deployment-manifest.json",
   "prod/static-voting-config.json.sha256",
+  "prod/v2-static-voting-config.json.sha256",
   "stage/static-voting-config.json.sha256",
+  "stage/v2-static-voting-config.json.sha256",
   "test/prod-static-voting-config-duplicate.json.sha256",
   "test/static-voting-config-duplicate.json.sha256",
 ]);
 
 const PIN_PATH_PATTERN =
-  /^pins\/(?:test\/)?(?:prod|stage)\/[0-9a-f]{64}\/static-voting-config\.json$/;
+  /^pins\/(?:test\/)?(?:prod|stage)\/[0-9a-f]{64}\/(?:v2-)?static-voting-config\.json$/;
 const PIN_SIDECAR_PATTERN =
-  /^pins\/(?:test\/)?(?:prod|stage)\/[0-9a-f]{64}\/static-voting-config\.json\.sha256$/;
+  /^pins\/(?:test\/)?(?:prod|stage)\/[0-9a-f]{64}\/(?:v2-)?static-voting-config\.json\.sha256$/;
 
 function isSourcePath(path) {
   return SOURCE_PATHS.has(path) || PIN_PATH_PATTERN.test(path);

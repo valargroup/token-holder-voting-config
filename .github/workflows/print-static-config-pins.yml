@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - "prod/static-voting-config.json"
+      - "prod/v2-static-voting-config.json"
       - "stage/static-voting-config.json"
+      - "stage/v2-static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
       - "pins/test/**"
@@ -25,7 +27,9 @@ jobs:
       - name: Validate static config JSON
         run: |
           python3 -m json.tool prod/static-voting-config.json >/dev/null
+          python3 -m json.tool prod/v2-static-voting-config.json >/dev/null
           python3 -m json.tool stage/static-voting-config.json >/dev/null
+          python3 -m json.tool stage/v2-static-voting-config.json >/dev/null
           python3 -m json.tool test/static-voting-config-duplicate.json >/dev/null
           python3 -m json.tool test/prod-static-voting-config-duplicate.json >/dev/null
 
@@ -37,11 +41,15 @@ jobs:
           stage_hash=$(sha256sum stage/static-voting-config.json | awk '{print $1}')
           prod_duplicate_hash=$(sha256sum test/prod-static-voting-config-duplicate.json | awk '{print $1}')
           stage_duplicate_hash=$(sha256sum test/static-voting-config-duplicate.json | awk '{print $1}')
+          prod_v2_hash=$(sha256sum prod/v2-static-voting-config.json | awk '{print $1}')
+          stage_v2_hash=$(sha256sum stage/v2-static-voting-config.json | awk '{print $1}')
 
           prod_url="https://voting.valargroup.dev/pins/prod/${prod_hash}/static-voting-config.json?checksum=sha256:${prod_hash}"
           stage_url="https://voting.valargroup.dev/pins/stage/${stage_hash}/static-voting-config.json?checksum=sha256:${stage_hash}"
           prod_duplicate_url="https://voting.valargroup.dev/pins/test/prod/${prod_duplicate_hash}/static-voting-config.json?checksum=sha256:${prod_duplicate_hash}"
           stage_duplicate_url="https://voting.valargroup.dev/pins/test/stage/${stage_duplicate_hash}/static-voting-config.json?checksum=sha256:${stage_duplicate_hash}"
+          prod_v2_url="https://voting.valargroup.dev/pins/prod/${prod_v2_hash}/v2-static-voting-config.json?checksum=sha256:${prod_v2_hash}"
+          stage_v2_url="https://voting.valargroup.dev/pins/stage/${stage_v2_hash}/v2-static-voting-config.json?checksum=sha256:${stage_v2_hash}"
 
           {
             echo "## Static Config Wallet Pins"
@@ -52,6 +60,8 @@ jobs:
             echo "| staging | \`${stage_url}\` |"
             echo "| production duplicate | \`${prod_duplicate_url}\` |"
             echo "| staging duplicate | \`${stage_duplicate_url}\` |"
+            echo "| production v2 | \`${prod_v2_url}\` |"
+            echo "| staging v2 | \`${stage_v2_url}\` |"
             echo
             echo "### Copy/Paste"
             echo
@@ -60,5 +70,7 @@ jobs:
             echo "staging=${stage_url}"
             echo "production_duplicate=${prod_duplicate_url}"
             echo "staging_duplicate=${stage_duplicate_url}"
+            echo "production_v2=${prod_v2_url}"
+            echo "staging_v2=${stage_v2_url}"
             echo "\`\`\`"
           } | tee -a "${GITHUB_STEP_SUMMARY}"

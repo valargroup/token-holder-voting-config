@@ -8,8 +8,10 @@ This repo serves environment-scoped configuration documents:
 | --- | --- | --- |
 | [`prod/dynamic-voting-config.json`](https://voting.valargroup.dev/prod/dynamic-voting-config.json) | Production dynamic config, per-round signed registry | Active production path. |
 | [`prod/static-voting-config.json`](https://voting.valargroup.dev/prod/static-voting-config.json) | Production static config | Current production alias. Wallet releases must use its immutable `pins/prod/<sha256>/` copy. |
+| [`prod/v2-static-voting-config.json`](https://voting.valargroup.dev/prod/v2-static-voting-config.json) | Production static config, v2 multi-URL schema | Published and pinned. Not yet consumable: the verifier and wallets need v2 support first. |
 | [`stage/dynamic-voting-config.json`](https://voting.valargroup.dev/stage/dynamic-voting-config.json) | Staging dynamic config, per-round signed registry | Active for staging wallets and test workflows. |
 | [`stage/static-voting-config.json`](https://voting.valargroup.dev/stage/static-voting-config.json) | Staging static config | Current staging alias. Staging releases should use its immutable `pins/stage/<sha256>/` copy. |
+| [`stage/v2-static-voting-config.json`](https://voting.valargroup.dev/stage/v2-static-voting-config.json) | Staging static config, v2 multi-URL schema | Published and pinned. Not yet consumable: the verifier and wallets need v2 support first. |
 | [`deployment-manifest.json`](https://voting.valargroup.dev/deployment-manifest.json) | Publication metadata | Identifies the complete snapshot's source revision, publication time, and config hashes. |
 
 The dynamic and static schemas implement [draft ZIP 1244](https://github.com/zcash/zips/pull/1244) "Shielded Voting Wallet API". The v1 file has no chain of trust; the dynamic config signs each round's election authority public key with an Ed25519 admin key whose public counterpart is fetched through the wallet's hash-pinned static config.
@@ -87,6 +89,55 @@ domain. This lets the serving platform change without another static-config
 change. Replace the current development key before shipping a production wallet
 release.
 
+## Static Config Schema v2
+
+v1 names exactly one `dynamic_config_url`. A wallet pinned to a v1 static config
+therefore has a single origin to reach for the round registry, and an outage at
+that one DNS provider leaves it with no way to fetch rounds at all - even though
+the same bytes are published at several independent origins.
+
+v2 replaces the single URL with an ordered `dynamic_config_urls` mirror list:
+
+```json
+{
+  "static_config_version": 2,
+  "dynamic_config_urls": [
+    "https://voting.valargroup.dev/prod/dynamic-voting-config.json",
+    "https://raw.githubusercontent.com/valargroup/token-holder-voting-config/main/prod/dynamic-voting-config.json"
+  ],
+  "trusted_keys": [
+    {
+      "key_id": "valar-2026-q2",
+      "alg": "ed25519",
+      "pubkey": "<base64, 32 bytes>"
+    }
+  ]
+}
+```
+
+The singular `dynamic_config_url` is absent in v2; `trusted_keys` is unchanged and
+must stay identical to the matching v1 file, which the publisher enforces. The v2
+files point at the **existing v1 dynamic configs** - there is no v2 dynamic config
+schema.
+
+A client tries the URLs in order and falls through to the next one only on a
+transport failure: DNS resolution failure, connection failure, timeout, or a 5xx
+response. It must not fall through because it dislikes the content. Index 0 is
+the canonical `voting.valargroup.dev` gateway; later entries are mirrors on
+independent DNS zones and CDNs. Every entry is drawn from a reviewed allowlist
+enforced by `scripts/build-cloudflare-pages.sh`.
+
+This widens *availability*, not trust. Whichever mirror answers, every round
+entry is still authenticated against `trusted_keys` exactly as in v1, and the
+whole static config is still covered by the wallet's hash pin. A mirror can
+therefore serve stale or missing rounds, but cannot forge one.
+
+v1 remains published, pinned, and fully supported. Nothing about the four v1
+files changes, so every wallet already pinned to one keeps working. v2 is not yet
+consumable: `vote-sdk` rejects `static_config_version: 2` today (see **CI**
+below), and must learn the schema - including the `internal/admin` refresh path,
+which reads only the singular field - before a wallet release embeds a v2 pin.
+
 For testing alternative config URLs, we publish duplicate static configs under
 `test/`. The production duplicate lives at
 `https://voting.valargroup.dev/test/prod-static-voting-config-duplicate.json`,
@@ -123,6 +174,9 @@ checked in. Coordinate every production static-config change with a wallet
 release: first merge and deploy this repo, then copy the new immutable pin into
 the wallet release branch.
 
+v2 static configs follow the identical contract at
+`pins/<environment>/<sha256>/v2-static-voting-config.json`.
+
 Compute a local pin with:
 
 ```bash
@@ -131,6 +185,12 @@ echo "https://voting.valargroup.dev/pins/prod/${PROD_HASH}/static-voting-config.
 
 STAGE_HASH=$(sha256sum stage/static-voting-config.json | awk '{print $1}')
 echo "https://voting.valargroup.dev/pins/stage/${STAGE_HASH}/static-voting-config.json?checksum=sha256:${STAGE_HASH}"
+
+PROD_V2_HASH=$(sha256sum prod/v2-static-voting-config.json | awk '{print $1}')
+echo "https://voting.valargroup.dev/pins/prod/${PROD_V2_HASH}/v2-static-voting-config.json?checksum=sha256:${PROD_V2_HASH}"
+
+STAGE_V2_HASH=$(sha256sum stage/v2-static-voting-config.json | awk '{print $1}')
+echo "https://voting.valargroup.dev/pins/stage/${STAGE_V2_HASH}/v2-static-voting-config.json?checksum=sha256:${STAGE_V2_HASH}"
 ```
 
 The deploy workflow also writes the canonical pin strings to the GitHub Actions
@@ -211,7 +271,9 @@ path, `m/44'/118'/0'/0/0`, with `sv` bech32 addresses.
 
 ## Signing Key Custody
 
-Each environment's `static-voting-config.json` lists every public key that wallets trust under its `trusted_keys` array. Each entry is the public side of an admin key that may sign round entries in that environment's `dynamic-voting-config.json`.
+Each environment's `static-voting-config.json` lists every public key that wallets trust under its `trusted_keys` array. Its `v2-static-voting-config.json` must trust the identical set of keys, so a key addition, rotation, or removal has to land in both files in the same PR.
+
+[`scripts/verify-trusted-key-parity.sh`](scripts/verify-trusted-key-parity.sh) enforces this as its own CI step and again at publication time. The two files are separate wallet trust anchors for the same environment: if a key is added to one and forgotten in the other, rounds signed by it verify for wallets pinned to one file and fail for wallets pinned to the other, and nothing else in the pipeline notices - each file independently verifies fine, because verification only needs *at least one* trusted key to match. The check is order-independent (reordering `trusted_keys` is not an error) and also rejects a duplicate `key_id` or a pubkey repeated under two names. Immutable pins are deliberately excluded: they are historical snapshots and legitimately record older key sets. Each entry is the public side of an admin key that may sign round entries in that environment's `dynamic-voting-config.json`.
 
 The current static config includes a development key, `valar-test`. Replace it with a vote-manager-held production key before shipping the pinned static config URL in a wallet release.
 
@@ -242,6 +304,10 @@ chmod +x voting-config
 
 ./voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
 ./voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json
+
+# v2 files cannot be passed to --static-config yet; verify them through the shim.
+PATH="$PWD:$PATH" scripts/verify-v2-static-configs.sh
+
 SOURCE_REVISION=local-test \
   scripts/build-cloudflare-pages.sh "$(mktemp -d)/site"
 ```
@@ -250,7 +316,9 @@ SOURCE_REVISION=local-test \
 
 Four workflows guard the serving path:
 
-- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It downloads the checksum-pinned `voting-config` binary from the `vote-sdk` v1.3.0-rc.2 GitHub release and runs `voting-config verify`.
+- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It downloads the checksum-pinned `voting-config` binary from the `vote-sdk` v1.3.0-rc.2 GitHub release and runs `voting-config verify`. It also runs [`scripts/verify-trusted-key-parity.sh`](scripts/verify-trusted-key-parity.sh) as its own step, so a trust set split between an environment's v1 and v2 files fails with a message naming the drifted keys.
+
+  That pinned verifier predates v2: it compares `static_config_version` for exact equality with `1` and requires a singular `dynamic_config_url`, so passing it a v2 file fails with `unsupported static_config_version 2`. Until `vote-sdk` supports the schema, [`scripts/verify-v2-static-configs.sh`](scripts/verify-v2-static-configs.sh) projects each v2 document onto the equivalent v1 shape - same `trusted_keys`, `dynamic_config_urls[0]` as the single URL - and verifies that, which runs exactly the signature check that matters. The v2-specific shape is enforced separately by [`scripts/build-cloudflare-pages.sh`](scripts/build-cloudflare-pages.sh) and covered by [`scripts/tests/v2-static-config-shape.sh`](scripts/tests/v2-static-config-shape.sh). Delete the shim once the pinned verifier understands v2.
 - [`deploy-cloudflare-pages.yml`](.github/workflows/deploy-cloudflare-pages.yml) publishes one versioned gateway and fallback snapshot, verifies the exact served bytes and headers, and forces the GitHub-outage path once. It is inert until the explicit repository enable flag and exact Cloudflare target are configured.
 - [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) retains the GitHub Pages transition mirror while freezing its previously checksum-pinned static aliases.
 - [`deploy-duplicate-static-config.yml`](.github/workflows/deploy-duplicate-static-config.yml) applies the same full-snapshot publisher when a test alias changes.
