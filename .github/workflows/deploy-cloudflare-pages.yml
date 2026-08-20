@@ -53,6 +53,7 @@ jobs:
           voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json
           voting-config verify --config prod/dynamic-voting-config.json --static-config test/prod-static-voting-config-duplicate.json
           voting-config verify --config stage/dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json
+          scripts/verify-v2-static-configs.sh
 
       - name: Build serving snapshot
         env:

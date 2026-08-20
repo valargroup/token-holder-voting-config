@@ -6,9 +6,11 @@ on:
       - "prod/dynamic-voting-config.json"
       - "prod/pir.json"
       - "prod/static-voting-config.json"
+      - "prod/v2-static-voting-config.json"
       - "stage/dynamic-voting-config.json"
       - "stage/pir.json"
       - "stage/static-voting-config.json"
+      - "stage/v2-static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
       - "pins/**"
@@ -19,6 +21,7 @@ on:
       - "scripts/cloudflare-gateway.mjs"
       - "scripts/require-latest-main.sh"
       - "scripts/verify-static-config-compatibility.sh"
+      - "scripts/verify-v2-static-configs.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
       - "scripts/wait-for-live-revision.sh"
@@ -37,9 +40,11 @@ on:
       - "prod/dynamic-voting-config.json"
       - "prod/pir.json"
       - "prod/static-voting-config.json"
+      - "prod/v2-static-voting-config.json"
       - "stage/dynamic-voting-config.json"
       - "stage/pir.json"
       - "stage/static-voting-config.json"
+      - "stage/v2-static-voting-config.json"
       - "test/static-voting-config-duplicate.json"
       - "test/prod-static-voting-config-duplicate.json"
       - "pins/**"
@@ -50,6 +55,7 @@ on:
       - "scripts/cloudflare-gateway.mjs"
       - "scripts/require-latest-main.sh"
       - "scripts/verify-static-config-compatibility.sh"
+      - "scripts/verify-v2-static-configs.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
       - "scripts/wait-for-live-revision.sh"
@@ -105,6 +111,12 @@ jobs:
       # It does not query the chain. Wallets still perform the runtime check that
       # the signed ea_pk in this file matches the ea_pk returned by the chain for
       # the selected round.
+      #
+      # The pinned verifier predates the v2 static config schema and rejects
+      # static_config_version 2 outright, so the v2 files and their pins are
+      # verified through scripts/verify-v2-static-configs.sh, which checks the
+      # same trusted-key signatures via an equivalent v1 projection. The
+      # v2-specific shape is enforced by scripts/build-cloudflare-pages.sh.
       - name: Verify prod-folder production voting config
         run: voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
 
@@ -116,6 +128,9 @@ jobs:
 
       - name: Verify staging duplicate static config
         run: voting-config verify --config stage/dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json
+
+      - name: Verify v2 static configs
+        run: scripts/verify-v2-static-configs.sh
 
       - name: Verify published static config compatibility
         run: scripts/verify-static-config-compatibility.sh

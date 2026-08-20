@@ -47,13 +47,19 @@ do not mix snapshots with different freshness.
 
 1. Requires a clean checkout whose `SOURCE_REVISION` is exactly `HEAD`.
 2. Validates all production, staging, and test JSON, including the PIR schema.
-3. Requires static configs to use the matching `voting.valargroup.dev` dynamic
-   URL.
+3. Requires v1 static configs to use the matching `voting.valargroup.dev`
+   dynamic URL, and each `v2-static-voting-config.json` to declare
+   `static_config_version: 2` with a unique, allowlisted `dynamic_config_urls`
+   list led by that same canonical URL and no singular `dynamic_config_url`.
+   It also requires an environment's v1 and v2 `trusted_keys` to be identical.
 4. Requires a content-addressed copy of every current static config under
-   `pins/` and rejects deletion of any pin found in reachable repository
-   history.
+   `pins/` - v1 as `<sha256>/static-voting-config.json`, v2 as
+   `<sha256>/v2-static-voting-config.json` - and rejects deletion of any pin
+   found in reachable repository history.
 5. Runs compatibility verification against every immutable pin and frozen
-   legacy alias.
+   legacy alias. v2 pins are verified through
+   `scripts/verify-v2-static-configs.sh`, because the pinned verifier rejects
+   `static_config_version: 2` outright.
 6. Copies only the public allowlist, adds checksum sidecars, writes a manifest,
    and embeds the exact source revision in the Pages gateway.
 
@@ -258,6 +264,14 @@ Wallets must embed the immutable
 checksum. Existing Vizor and zodl builds pinned to GitHub Raw keep working and
 are not changed by this deployment, but they remain exposed to a GitHub outage
 until a new app release adopts the `voting.valargroup.dev` pin.
+
+The v2 aliases and their `pins/<environment>/<sha256>/v2-static-voting-config.json`
+copies are published and monitored on the same terms, but are not yet consumable:
+`vote-sdk` must learn `static_config_version: 2` and the `dynamic_config_urls`
+mirror list before a wallet release embeds a v2 pin. Once it does, a wallet
+pinned to a v2 config survives a DNS failure at any single origin by falling
+through to the next mirror, while still authenticating every round against the
+same `trusted_keys`. See the README's "Static Config Schema v2" section.
 
 Cloudflare reference documentation:
 

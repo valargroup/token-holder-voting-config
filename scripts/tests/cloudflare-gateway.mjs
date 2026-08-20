@@ -207,6 +207,28 @@ for (const primaryFetch of [
 }
 
 {
+  const { response } = await gateway(
+    "prod/v2-static-voting-config.json",
+    async () => new Response("{}\n")
+  );
+  assert.equal(response.headers.get("x-voting-config-origin"), "github");
+  assert.equal(
+    response.headers.get("cache-control"),
+    "public, max-age=300, must-revalidate, stale-if-error=86400"
+  );
+}
+
+{
+  const pinPath = `pins/stage/${"b".repeat(64)}/v2-static-voting-config.json`;
+  const { response } = await gateway(pinPath, async () => new Response("{}\n"));
+  assert.equal(response.headers.get("x-voting-config-origin"), "github");
+  assert.equal(
+    response.headers.get("cache-control"),
+    "public, max-age=31536000, immutable"
+  );
+}
+
+{
   let primaryCalls = 0;
   const assets = assetBinding();
   const { response } = await gateway(

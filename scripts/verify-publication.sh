@@ -211,9 +211,11 @@ source_paths=(
   prod/dynamic-voting-config.json
   prod/pir.json
   prod/static-voting-config.json
+  prod/v2-static-voting-config.json
   stage/dynamic-voting-config.json
   stage/pir.json
   stage/static-voting-config.json
+  stage/v2-static-voting-config.json
   test/prod-static-voting-config-duplicate.json
   test/static-voting-config-duplicate.json
 )
@@ -221,7 +223,9 @@ source_paths=(
 paths=(
   "${source_paths[@]}"
   prod/static-voting-config.json.sha256
+  prod/v2-static-voting-config.json.sha256
   stage/static-voting-config.json.sha256
+  stage/v2-static-voting-config.json.sha256
   test/prod-static-voting-config-duplicate.json.sha256
   test/static-voting-config-duplicate.json.sha256
   deployment-manifest.json
@@ -239,11 +243,17 @@ stage_duplicate_sha256="$(sha256_file "$expected_dir/test/static-voting-config-d
   || fail "expected snapshot is missing its production duplicate immutable pin"
 [[ -f "$expected_dir/pins/test/stage/${stage_duplicate_sha256}/static-voting-config.json" ]] \
   || fail "expected snapshot is missing its staging duplicate immutable pin"
+prod_static_v2_sha256="$(sha256_file "$expected_dir/prod/v2-static-voting-config.json")"
+stage_static_v2_sha256="$(sha256_file "$expected_dir/stage/v2-static-voting-config.json")"
+[[ -f "$expected_dir/pins/prod/${prod_static_v2_sha256}/v2-static-voting-config.json" ]] \
+  || fail "expected snapshot is missing its current production v2 immutable pin"
+[[ -f "$expected_dir/pins/stage/${stage_static_v2_sha256}/v2-static-voting-config.json" ]] \
+  || fail "expected snapshot is missing its current staging v2 immutable pin"
 
 while IFS= read -r expected_pin; do
   pin_path="${expected_pin#"$expected_dir/"}"
   paths+=("$pin_path")
-  if [[ "$pin_path" == */static-voting-config.json ]]; then
+  if [[ "$pin_path" == */static-voting-config.json || "$pin_path" == */v2-static-voting-config.json ]]; then
     source_paths+=("$pin_path")
   fi
 done < <(find "$expected_dir/pins" -type f -print | sort)
@@ -263,6 +273,8 @@ header_matches stage/pir.json cache-control "$short_cache_pattern"
 header_matches deployment-manifest.json cache-control "$short_cache_pattern"
 header_matches prod/static-voting-config.json cache-control "$static_cache_pattern"
 header_matches stage/static-voting-config.json cache-control "$static_cache_pattern"
+header_matches prod/v2-static-voting-config.json cache-control "$static_cache_pattern"
+header_matches stage/v2-static-voting-config.json cache-control "$static_cache_pattern"
 header_matches test/prod-static-voting-config-duplicate.json cache-control "$static_cache_pattern"
 header_matches test/static-voting-config-duplicate.json cache-control "$static_cache_pattern"
 header_matches "pins/prod/${prod_static_sha256}/static-voting-config.json" \
@@ -272,6 +284,10 @@ header_matches "pins/stage/${stage_static_sha256}/static-voting-config.json" \
 header_matches "pins/test/prod/${prod_duplicate_sha256}/static-voting-config.json" \
   cache-control "$immutable_cache_pattern"
 header_matches "pins/test/stage/${stage_duplicate_sha256}/static-voting-config.json" \
+  cache-control "$immutable_cache_pattern"
+header_matches "pins/prod/${prod_static_v2_sha256}/v2-static-voting-config.json" \
+  cache-control "$immutable_cache_pattern"
+header_matches "pins/stage/${stage_static_v2_sha256}/v2-static-voting-config.json" \
   cache-control "$immutable_cache_pattern"
 header_matches prod/dynamic-voting-config.json access-control-allow-origin \
   '^[[:space:]]*\*[[:space:]]*$'
@@ -301,9 +317,18 @@ fi
 
 for env_name in prod stage; do
   expected_dynamic_url="https://voting.valargroup.dev/${env_name}/dynamic-voting-config.json"
+  expected_raw_dynamic_url="https://raw.githubusercontent.com/valargroup/token-holder-voting-config/main/${env_name}/dynamic-voting-config.json"
   jq -e --arg expected "$expected_dynamic_url" '.dynamic_config_url == $expected' \
     "$download_dir/${env_name}_static-voting-config.json" >/dev/null \
     || fail "published ${env_name} static config points outside the controlled domain"
+  jq -e \
+    --arg expected "$expected_dynamic_url" \
+    --arg raw "$expected_raw_dynamic_url" '
+      .dynamic_config_urls[0] == $expected and
+      (.dynamic_config_urls | all(. == $expected or . == $raw))
+    ' \
+    "$download_dir/${env_name}_v2-static-voting-config.json" >/dev/null \
+    || fail "published ${env_name} v2 static config lists a mirror outside the reviewed allowlist"
 done
 
 seed_is_absent() {
