@@ -51,7 +51,8 @@ do not mix snapshots with different freshness.
    dynamic URL, and each `v2-static-voting-config.json` to declare
    `static_config_version: 2` with a unique, allowlisted `dynamic_config_urls`
    list led by that same canonical URL and no singular `dynamic_config_url`.
-   It also requires an environment's v1 and v2 `trusted_keys` to be identical.
+   It also runs `scripts/verify-trusted-key-parity.sh`, which requires an
+   environment's v1 and v2 files to trust the identical set of keys.
 4. Requires a content-addressed copy of every current static config under
    `pins/` - v1 as `<sha256>/static-voting-config.json`, v2 as
    `<sha256>/v2-static-voting-config.json` - and rejects deletion of any pin

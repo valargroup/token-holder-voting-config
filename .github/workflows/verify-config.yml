@@ -22,6 +22,7 @@ on:
       - "scripts/require-latest-main.sh"
       - "scripts/verify-static-config-compatibility.sh"
       - "scripts/verify-v2-static-configs.sh"
+      - "scripts/verify-trusted-key-parity.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
       - "scripts/wait-for-live-revision.sh"
@@ -56,6 +57,7 @@ on:
       - "scripts/require-latest-main.sh"
       - "scripts/verify-static-config-compatibility.sh"
       - "scripts/verify-v2-static-configs.sh"
+      - "scripts/verify-trusted-key-parity.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
       - "scripts/wait-for-live-revision.sh"
@@ -117,6 +119,9 @@ jobs:
       # verified through scripts/verify-v2-static-configs.sh, which checks the
       # same trusted-key signatures via an equivalent v1 projection. The
       # v2-specific shape is enforced by scripts/build-cloudflare-pages.sh.
+      - name: Verify v1/v2 trusted key parity
+        run: scripts/verify-trusted-key-parity.sh
+
       - name: Verify prod-folder production voting config
         run: voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
 

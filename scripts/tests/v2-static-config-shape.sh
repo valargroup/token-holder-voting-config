@@ -99,7 +99,7 @@ expect_rejected empty-trusted-keys "$shape_message"
 
 apply_v2_case '.trusted_keys = [.trusted_keys[0]]'
 expect_rejected diverging-trusted-keys \
-  "prod/v2-static-voting-config.json trusted_keys must match prod/static-voting-config.json"
+  "prod/static-voting-config.json and prod/v2-static-voting-config.json must trust the same keys"
 
 # A v2 alias with no matching immutable pin must not publish.
 rm -rf "$case_pin_dir"

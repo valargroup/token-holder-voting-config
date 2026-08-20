@@ -162,14 +162,10 @@ check_v2_static_config prod/v2-static-voting-config.json "$prod_dynamic_url" "$p
 check_v2_static_config stage/v2-static-voting-config.json "$stage_dynamic_url" "$stage_raw_dynamic_url"
 
 # Both trust anchors for one environment must carry the same keys, so a key
-# rotation can never land in one file and silently miss the other.
-for environment_name in prod stage; do
-  if ! diff -q \
-    <(jq -S '.trusted_keys' "${environment_name}/static-voting-config.json") \
-    <(jq -S '.trusted_keys' "${environment_name}/v2-static-voting-config.json") >/dev/null; then
-    fail "${environment_name}/v2-static-voting-config.json trusted_keys must match ${environment_name}/static-voting-config.json"
-  fi
-done
+# rotation can never land in one file and silently miss the other. CI runs this
+# as its own step too; publication repeats it so a snapshot can never be built
+# without it.
+scripts/verify-trusted-key-parity.sh
 
 prod_static_sha256="$(sha256_file prod/static-voting-config.json)"
 stage_static_sha256="$(sha256_file stage/static-voting-config.json)"

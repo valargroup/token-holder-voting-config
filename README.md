@@ -271,7 +271,9 @@ path, `m/44'/118'/0'/0/0`, with `sv` bech32 addresses.
 
 ## Signing Key Custody
 
-Each environment's `static-voting-config.json` lists every public key that wallets trust under its `trusted_keys` array. Its `v2-static-voting-config.json` must carry the identical array, so a key addition, rotation, or removal has to land in both files in the same PR; the publisher rejects a snapshot where they diverge. Each entry is the public side of an admin key that may sign round entries in that environment's `dynamic-voting-config.json`.
+Each environment's `static-voting-config.json` lists every public key that wallets trust under its `trusted_keys` array. Its `v2-static-voting-config.json` must trust the identical set of keys, so a key addition, rotation, or removal has to land in both files in the same PR.
+
+[`scripts/verify-trusted-key-parity.sh`](scripts/verify-trusted-key-parity.sh) enforces this as its own CI step and again at publication time. The two files are separate wallet trust anchors for the same environment: if a key is added to one and forgotten in the other, rounds signed by it verify for wallets pinned to one file and fail for wallets pinned to the other, and nothing else in the pipeline notices - each file independently verifies fine, because verification only needs *at least one* trusted key to match. The check is order-independent (reordering `trusted_keys` is not an error) and also rejects a duplicate `key_id` or a pubkey repeated under two names. Immutable pins are deliberately excluded: they are historical snapshots and legitimately record older key sets. Each entry is the public side of an admin key that may sign round entries in that environment's `dynamic-voting-config.json`.
 
 The current static config includes a development key, `valar-test`. Replace it with a vote-manager-held production key before shipping the pinned static config URL in a wallet release.
 
@@ -314,7 +316,7 @@ SOURCE_REVISION=local-test \
 
 Four workflows guard the serving path:
 
-- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It downloads the checksum-pinned `voting-config` binary from the `vote-sdk` v1.3.0-rc.2 GitHub release and runs `voting-config verify`.
+- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It downloads the checksum-pinned `voting-config` binary from the `vote-sdk` v1.3.0-rc.2 GitHub release and runs `voting-config verify`. It also runs [`scripts/verify-trusted-key-parity.sh`](scripts/verify-trusted-key-parity.sh) as its own step, so a trust set split between an environment's v1 and v2 files fails with a message naming the drifted keys.
 
   That pinned verifier predates v2: it compares `static_config_version` for exact equality with `1` and requires a singular `dynamic_config_url`, so passing it a v2 file fails with `unsupported static_config_version 2`. Until `vote-sdk` supports the schema, [`scripts/verify-v2-static-configs.sh`](scripts/verify-v2-static-configs.sh) projects each v2 document onto the equivalent v1 shape - same `trusted_keys`, `dynamic_config_urls[0]` as the single URL - and verifies that, which runs exactly the signature check that matters. The v2-specific shape is enforced separately by [`scripts/build-cloudflare-pages.sh`](scripts/build-cloudflare-pages.sh) and covered by [`scripts/tests/v2-static-config-shape.sh`](scripts/tests/v2-static-config-shape.sh). Delete the shim once the pinned verifier understands v2.
 - [`deploy-cloudflare-pages.yml`](.github/workflows/deploy-cloudflare-pages.yml) publishes one versioned gateway and fallback snapshot, verifies the exact served bytes and headers, and forces the GitHub-outage path once. It is inert until the explicit repository enable flag and exact Cloudflare target are configured.
