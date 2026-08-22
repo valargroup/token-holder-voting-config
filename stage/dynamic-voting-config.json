@@ -1994,6 +1994,17 @@
         }
       ]
     },
+    "a68bd5213b2dd74d8480b760d0acdf9d672d85f16a94dca4db17e77178df1d3a": {
+      "auth_version": 2,
+      "ea_pk": "1bJmemryGiO0lsNblI/07l9n9FdwUU5mkCvU+6Xo7jE=",
+      "signatures": [
+        {
+          "key_id": "valar-test-keplr-derived",
+          "alg": "ed25519",
+          "sig": "pibXujiUkkmveDDEK4+sBdGcYvyGdEiuMIl2pOHnhW9Ozo0WrQ0/IkqvAPbIZE9SRqNXXKA7m5FyTTgg0zDMBw=="
+        }
+      ]
+    },
     "a6ab5491e588e6af8e3f30a3c5b8bfca2662037f657da1cdf4975ac4178a012c": {
       "auth_version": 1,
       "ea_pk": "XtI7FUwKxjY/Tefwno/FWQE7qxARC6E46cfSZGJZqDk=",
