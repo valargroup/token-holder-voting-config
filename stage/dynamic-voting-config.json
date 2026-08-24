@@ -1983,6 +1983,17 @@
         }
       ]
     },
+    "97a4eb0e7f6fe1fd8cc743787b36943a725d362de2d13f4774cad28ddbec9e1e": {
+      "auth_version": 2,
+      "ea_pk": "YSVJVTds83MP/Q+JcwVqshtuWa6umnoTnsDfQXTWzSE=",
+      "signatures": [
+        {
+          "key_id": "valar-test-keplr-derived",
+          "alg": "ed25519",
+          "sig": "NQd9nosFO7sO3reWzRiH8vV1dEWm7DNa2sEc/0QhL1BSEZR9cCPO4dwS3l84o9HTOp6MNOHw3EjOLOs3vQIUCg=="
+        }
+      ]
+    },
     "9a26277565506adea1462cf0d67d3e72c8b6da5e135a42871a0b13a84547cf18": {
       "auth_version": 1,
       "ea_pk": "+4m6X/+g98cHq74s1yR9quHEBzZZgIoUsGEWYpfB7Rk=",
