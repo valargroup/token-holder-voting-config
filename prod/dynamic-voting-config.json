@@ -79,6 +79,11 @@
           "key_id": "valargroup",
           "alg": "ed25519",
           "sig": "fvf+K533MnMrSB0aKDVGIPL1IvY+AWi4op422wsajp5y0n0B7w65sDOM83GZWPriB7p8YHl1hxMz5gL2iIDvCg=="
+        },
+        {
+          "key_id": "zodl",
+          "alg": "ed25519",
+          "sig": "bRgnOGfTgQuo+yzdO2aJvgMS9GcJ4ehcfNR0LkOXH6Ab6F9uPgqQRLL15XT37gqImT6HMpmieuADlrR4Bq9+Aw=="
         }
       ]
     },
