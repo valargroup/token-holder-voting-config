@@ -44,11 +44,11 @@
   ],
   "pir_endpoints": [
     {
-      "url": "https://prod.pir.valargroup.org",
+      "url": "https://lb-pir-primary.valargroup.org",
       "label": "PIR primary"
     },
     {
-      "url": "https://prod.pir-backup.valargroup.org",
+      "url": "https://lb-pir-backup.valargroup.org/",
       "label": "PIR backup"
     },
     {
