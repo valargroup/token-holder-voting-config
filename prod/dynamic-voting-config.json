@@ -84,6 +84,11 @@
           "key_id": "zodl",
           "alg": "ed25519",
           "sig": "bRgnOGfTgQuo+yzdO2aJvgMS9GcJ4ehcfNR0LkOXH6Ab6F9uPgqQRLL15XT37gqImT6HMpmieuADlrR4Bq9+Aw=="
+        },
+        {
+          "key_id": "tachyon",
+          "alg": "ed25519",
+          "sig": "dAcFL6Dj/JzsPF6hkQ7tl3Lir1YOnt0pzv4AU3W9wrB7Y6UcWjdC9LBF6efAczismM2fVNOJTmZsVVBzEKBZBQ=="
         }
       ]
     },
