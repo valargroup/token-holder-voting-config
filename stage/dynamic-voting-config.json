@@ -2005,6 +2005,17 @@
         }
       ]
     },
+    "8a69a85761624eafc1ff73bcbd8bc7b150c3c1cf9f3707d535bf0dc452e7213b": {
+      "auth_version": 2,
+      "ea_pk": "1L1By9KMNK95/bjwr9PCObW5DIm1cjtRm/Ai7d827TY=",
+      "signatures": [
+        {
+          "key_id": "valar-test-keplr-derived",
+          "alg": "ed25519",
+          "sig": "DNSQ4ekKWRHqW3pWkeP3jjKKeYSNM1rG5eB1Qj2dxSjiUz+q6wsEmmgHy56ezYUGH01+IByGxLFR90o9JWUCAg=="
+        }
+      ]
+    },
     "8ba19de8c7e0ebed90a61d4b89685583ee3d2c118be94ee2ccafb7211fd58803": {
       "auth_version": 1,
       "ea_pk": "5/4A5fmundIYNFjvKFktw64XzIEBz0DSLOXQlWLrho4=",
