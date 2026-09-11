@@ -108,6 +108,17 @@
         }
       ]
     },
+    "05c6edecdf5a96e72255bc46065728a5339247aa42bac059d9d1b4b919eb6637": {
+      "auth_version": 2,
+      "ea_pk": "XWQdgO7b+jXivDBP0x/kkYljGdyt489JJ1jtBDn2urw=",
+      "signatures": [
+        {
+          "key_id": "valar-test-keplr-derived",
+          "alg": "ed25519",
+          "sig": "m17MICx94Z1DlkPCwXTzgUyTWAPBRZEVzujwa73EUzojRAyGJMy8sqX2BEfIWvBMCy83PfXLZ38ScMqwIpFfDQ=="
+        }
+      ]
+    },
     "05e377228ee165eeed804c2756b666490b111797a844bf6ab305c74d820a6c1b": {
       "auth_version": 2,
       "ea_pk": "U6sPjMgOSRnZ6C7lNfmaTO4RT9MUVDe1Ky8Hb6ekfbY=",
@@ -1928,6 +1939,17 @@
         }
       ]
     },
+    "5e19312b96bae2f006775fbdd451701091005ece23e71c08e634674613de0410": {
+      "auth_version": 2,
+      "ea_pk": "0kVqd/ftvyk1o3WJk56CkyU31ouwGx8wKsIswZZOZgw=",
+      "signatures": [
+        {
+          "key_id": "valar-test-keplr-derived",
+          "alg": "ed25519",
+          "sig": "BDpiEmT3/uk+s+6Gk1LsCM2THdNSKpEj3SqTXfT/mwoaIGRTD3uDGElCuGi4B9ycSG6jqqzUlK/B5fK9TBTaDQ=="
+        }
+      ]
+    },
     "5e70a496f6f45800b7735ef85a7b841312ec3f215ede2ed279da0b3d69b15304": {
       "auth_version": 1,
       "ea_pk": "h9yI4pLiS+FDFMcXkoiSDWn+Dhttnj+XRE+m3yXXrhk=",
@@ -2299,6 +2321,17 @@
           "key_id": "valar-test-keplr-derived",
           "alg": "ed25519",
           "sig": "Q6W+q3ELhvT1wmo0ipxuzdrrWR62O+WUqH/RZMDTH/c2jMs4aPvaNcrgzIhMRHmOouh2lJVbgfvH0Shm3iUcDg=="
+        }
+      ]
+    },
+    "7510d0d9b335f50f59eb7b8962a9487471a8950261773487d191cd125d48b803": {
+      "auth_version": 2,
+      "ea_pk": "Qdo9EYwaj8JIl0EWYcr6DLHu2vh9ZDyztfnTZ+4u+pU=",
+      "signatures": [
+        {
+          "key_id": "valar-test-keplr-derived",
+          "alg": "ed25519",
+          "sig": "izB115m48mzOqb6ZDYga0YfM0O3jJxZmIsZbmQaQCGPSziENMiVLUNvUVIqLraqmanfI6k8XV/1xjzPFYWD5DA=="
         }
       ]
     },
@@ -4155,6 +4188,17 @@
         }
       ]
     },
+    "d20e028cc17879272a2d27f254fc94d960965de1b384eecfe502c4abd2271c3c": {
+      "auth_version": 2,
+      "ea_pk": "SQ1EovhgRHeXN7iLMRvvJf7WrSTbXU9RBCmg9DvhuJ0=",
+      "signatures": [
+        {
+          "key_id": "valar-test-keplr-derived",
+          "alg": "ed25519",
+          "sig": "iU29lThk9FnwyQ6zunrM8SFRg7rYCGT76WDirGNNngIoysHdVzFLBT+Hg8OTC5MWCvCfpuGuIll1zS7YnrUhAQ=="
+        }
+      ]
+    },
     "d22ee5a753d0e6210fac5fdfb7a16444601e498c4ae93f03790b27b5797eb721": {
       "auth_version": 1,
       "ea_pk": "XU0mxITKWBFd3E2xCh7OKFiU6jdbbIA0uHzp/vsI9iQ=",
@@ -5015,6 +5059,17 @@
           "key_id": "valar-test-keplr-derived",
           "alg": "ed25519",
           "sig": "ziEv5FZTREF8H3RqddGfvcC87EiejUA4DDQazOHGHkfZEt98j8q0zOFax37hfoJHMR4PFuc+q/P0QF/CnXEECg=="
+        }
+      ]
+    },
+    "f76eb694b15f863c0d5332928fba4f419d4aae09ceb77223be13b7fb7ca10d02": {
+      "auth_version": 2,
+      "ea_pk": "wQLjeFT+K7doymBHIwXmrd2CQOEhOVRyYzkqPS6Bbr0=",
+      "signatures": [
+        {
+          "key_id": "valar-test-keplr-derived",
+          "alg": "ed25519",
+          "sig": "R9Tcb9wyNR/FjaFIhg4t0GBPEqkJo4/KB6+Vwymz+qTqB0NU2YiYCsvLNTqfHoQJW3OFkUA92W2Y+bP1WFpgBg=="
         }
       ]
     },
