@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "config_sha256": "532a89f3cc0d7dbebc06e8ff9cc63b60ea6157b6c80dc3c75c8f3734720c436e",
+    "linux_amd64_sha256": "bbf617bbbc6c4e290f542a3c68654f15e79e840a33332074261d639a2b3139bb",
+    "linux_arm64_sha256": "867361c11a81f74c48eb6ecba67f3f58b65e37e78fabff5449df5a805fac57c6",
+    "snapshot_manifest_sha256": "56c83d0f1a80bd7e8c1754450d30a0c31eaa9bbfc12ae7315aa05edc72736964",
+    "service_sha256": "98391e1cd54ff885937723f6a607e4604cc0b0b3dbc272a21d97c9508f82a7de"
+  },
+  "signatures": [
+    {
+      "key_id": "valargroup",
+      "alg": "ed25519",
+      "sig": "tqPXXwCx+ktC/rPokZfaAXAzuzC3GyuMM1Q/reY9nWA3V239Wm5Yom6LtG7NliYc4ltMkU+ZajLaifbAwI2VDA=="
+    }
+  ]
+}
