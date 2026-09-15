@@ -330,9 +330,10 @@ The ownership model, rollout gates, failure behavior, rollback steps, and outage
 The vote-sdk dashboard's **Authorize PIR update** page can create a PR containing
 `<environment>/pir.json` and adjacent `pir_attestations.json` in one commit.
 `pir.json` adds only `binary_tag`; artifact hashes and Ed25519 signatures live in
-the attestations document. Only the pinned `valargroup` coordinator key is trusted
-for this feature in both environments, with distinct production/staging signing
-scopes. These keys are intentionally independent of wallet trusted-key lists.
+the attestations document. Only the pinned `valargroup` coordinator key for the
+selected environment is trusted for this feature. Production and staging use
+separate keys and signing scopes. These pins are intentionally independent of
+wallet trusted-key lists.
 
 Publication runs `node scripts/verify-pir-update.mjs`. The signed-update CI job
 also passes `--artifacts` to verify the referenced release bytes and snapshot
