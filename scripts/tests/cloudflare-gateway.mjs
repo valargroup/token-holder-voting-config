@@ -293,3 +293,10 @@ for (const primaryFetch of [
 }
 
 console.log("Cloudflare gateway unit tests passed");
+
+for (const path of ["prod/pir_attestations.json", "stage/pir_attestations.json"]) {
+  const { response, assets } = await gateway(path, async () => new Response("unavailable", { status: 503 }));
+  assert.equal(response.status, 200);
+  assert.equal(assets.requests.length, 1);
+  assert.equal(assets.requests[0].url, `https://voting.valargroup.dev/${path}`);
+}

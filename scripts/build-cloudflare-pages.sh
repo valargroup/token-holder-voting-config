@@ -74,6 +74,11 @@ public_files=(
   test/static-voting-config-duplicate.json
 )
 
+# Attestations become required as soon as a coordinator selects a binary tag.
+for scope in prod stage; do
+  if [[ -f "${scope}/pir_attestations.json" ]]; then public_files+=("${scope}/pir_attestations.json"); fi
+done
+
 for file in "${public_files[@]}"; do
   [[ -f "$file" && ! -L "$file" ]] || fail "missing or unsafe public file: ${file}"
   jq -e . "$file" >/dev/null || fail "invalid JSON: ${file}"
@@ -90,6 +95,8 @@ for pir_file in prod/pir.json stage/pir.json; do
   ' "$pir_file" >/dev/null \
     || fail "invalid PIR config: ${pir_file} must be one schema v1 object with a positive 10-block snapshot_height"
 done
+
+node scripts/verify-pir-update.mjs
 
 [[ -f _headers && ! -L _headers ]] || fail "missing or unsafe headers file: _headers"
 [[ -f scripts/cloudflare-gateway.mjs && ! -L scripts/cloudflare-gateway.mjs ]] \

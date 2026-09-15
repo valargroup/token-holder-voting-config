@@ -220,6 +220,10 @@ source_paths=(
   test/static-voting-config-duplicate.json
 )
 
+for scope in prod stage; do
+  if [[ -f "$expected_dir/$scope/pir_attestations.json" ]]; then source_paths+=("$scope/pir_attestations.json"); fi
+done
+
 paths=(
   "${source_paths[@]}"
   prod/static-voting-config.json.sha256

@@ -1,0 +1,19 @@
+name: Verify signed PIR updates
+on:
+  pull_request:
+    paths: ['prod/pir*', 'stage/pir*', 'scripts/verify-pir-update.mjs', 'scripts/pir-update-keys.json', 'scripts/tests/pir-update*', '.github/workflows/verify-pir-update.yml']
+  push:
+    branches: [main]
+    paths: ['prod/pir*', 'stage/pir*', 'scripts/verify-pir-update.mjs', 'scripts/pir-update-keys.json', 'scripts/tests/pir-update*', '.github/workflows/verify-pir-update.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test scripts/tests/pir-update.test.mjs
+      - run: node scripts/verify-pir-update.mjs --artifacts

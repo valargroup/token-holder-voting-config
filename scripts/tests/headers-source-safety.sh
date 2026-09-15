@@ -23,6 +23,8 @@ cp \
   "${repo_root}/scripts/build-github-pages.sh" \
   "${repo_root}/scripts/cloudflare-gateway.mjs" \
   "${repo_root}/scripts/verify-trusted-key-parity.sh" \
+  "${repo_root}/scripts/verify-pir-update.mjs" \
+  "${repo_root}/scripts/pir-update-keys.json" \
   "${fixture_repo}/scripts/"
 cp -R \
   "${repo_root}/prod" \

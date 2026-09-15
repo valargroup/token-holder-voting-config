@@ -6,10 +6,12 @@ const REHEARSAL_VALUE = "github-outage";
 const SOURCE_PATHS = new Set([
   "prod/dynamic-voting-config.json",
   "prod/pir.json",
+  "prod/pir_attestations.json",
   "prod/static-voting-config.json",
   "prod/v2-static-voting-config.json",
   "stage/dynamic-voting-config.json",
   "stage/pir.json",
+  "stage/pir_attestations.json",
   "stage/static-voting-config.json",
   "stage/v2-static-voting-config.json",
   "test/prod-static-voting-config-duplicate.json",
