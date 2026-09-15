@@ -6,10 +6,6 @@
       "label": "valargroup"
     },
     {
-      "url": "https://ru.zcash.space",
-      "label": "ruzcash"
-    },
-    {
       "url": "https://147-182-192-212.sslip.io",
       "label": "Zcash Labs"
     },
@@ -32,10 +28,6 @@
     {
       "url": "https://zvote.keplr.app",
       "label": "Keplr"
-    },
-    {
-      "url": "https://zvote.zfnd.org",
-      "label": "ZF"
     },
     {
       "url": "https://v.ombie.cash",
