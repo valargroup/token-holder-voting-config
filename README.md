@@ -324,3 +324,24 @@ Four workflows guard the serving path:
 - [`deploy-duplicate-static-config.yml`](.github/workflows/deploy-duplicate-static-config.yml) applies the same full-snapshot publisher when a test alias changes.
 
 The ownership model, rollout gates, failure behavior, rollback steps, and outage rehearsal are documented in [`docs/cloudflare-hosting.md`](docs/cloudflare-hosting.md).
+
+### Signed PIR automatic-update targets
+
+The vote-sdk dashboard's **Authorize PIR update** page can create a PR containing
+`<environment>/pir.json` and adjacent `pir_attestations.json` in one commit.
+`pir.json` adds only `binary_tag`; artifact hashes and Ed25519 signatures live in
+the attestations document. Only the pinned `valargroup` coordinator key is trusted
+for this feature in both environments, with distinct production/staging signing
+scopes. These keys are intentionally independent of wallet trusted-key lists.
+
+Publication runs `node scripts/verify-pir-update.mjs`. The signed-update CI job
+also passes `--artifacts` to verify the referenced release bytes and snapshot
+manifest. Run `node --test scripts/tests/pir-update.test.mjs` for the shared
+cross-language signature vector. Snapshot-only configs remain compatible until
+the first coordinator-signed binary selection; no placeholder signature is valid.
+
+Editing any config byte requires a matching new attestation. Mismatched files,
+invalid signatures, or failed hashes cause enrolled hosts to keep their current
+generation. There is no revision counter or expiration, so an older signed target
+remains acceptable. The host protocol is documented in vote-nullifier-pir's
+`docs/runbooks/automatic-pir-updates.md`.

@@ -35,3 +35,9 @@
 
 /pins/*
   Cache-Control: public, max-age=31536000, immutable
+
+/prod/pir_attestations.json
+  Cache-Control: public, max-age=60, must-revalidate, stale-if-error=86400
+
+/stage/pir_attestations.json
+  Cache-Control: public, max-age=60, must-revalidate, stale-if-error=86400
