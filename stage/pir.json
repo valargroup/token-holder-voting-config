@@ -1,4 +1,5 @@
 {
   "schema_version": 1,
-  "snapshot_height": 4245460
+  "snapshot_height": 4245460,
+  "binary_tag": "v0.12.0-rc.4"
 }
