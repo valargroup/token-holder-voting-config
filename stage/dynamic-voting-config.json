@@ -1994,6 +1994,17 @@
         }
       ]
     },
+    "5b0482cceb5f2d0ddf46f6f66cbc15a49a42f63a6253450ca3036ddc50f30d1f": {
+      "auth_version": 2,
+      "ea_pk": "zE9nYyOR/edUpq/e/r1ZAgbLnH0Bkftwd4lPaXL02Ts=",
+      "signatures": [
+        {
+          "key_id": "zodl-stage-vote-manager",
+          "alg": "ed25519",
+          "sig": "7B1zHlU1QRnr2Os3HuaPvoT3THy7DGzTpaKMTG09U7Z+RslTN0H2lHJIXakMW7kgYBYITbYZKIFUPLfLt4hUBw=="
+        }
+      ]
+    },
     "5b0d29315d1cefd01bf7a987a8c28c9e93ef7fb7b12edac2622bfda00f9ef23c": {
       "auth_version": 1,
       "ea_pk": "/fcxR5iuWMlBi1f11iGF9pv9GFceFXVQQPyKCTPxozc=",
