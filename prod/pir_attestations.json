@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "payload": {
-    "config_sha256": "8754dcc6650a508c1faf4840081eab0a946fea0e4097445da2af62086b2912d8",
+    "config_sha256": "081ecacfb928aa98d8a86da4bdaec580b5daea12e7aad57dc1f0b67e7b3ae911",
     "linux_amd64_sha256": "54adaefd9cca082276f5ebb8d9c9972bec5964da4ee9d8a0dcbd579bdadacf67",
     "linux_arm64_sha256": "67043e6a0251d6e9fed56364d864d6eae615f93ebad65f16349dbbfa8dbbfa14",
-    "snapshot_manifest_sha256": "f6972eccda9b70dcd660b5f423f7fddc67bc0a3a1fa51b985ef07ca90919f68d",
+    "snapshot_manifest_sha256": "3cff30a80a1da3a0fa30a2f75eb2de373ee55e237677cbfded3794b330e7a3a5",
     "service_sha256": "62bc266e40eca4224fbfe12e9bc39f15a68e454be428f3ac78b9d268594cb847"
   },
   "signatures": [
     {
       "key_id": "valargroup",
       "alg": "ed25519",
-      "sig": "rY32m1kcDlaUZEkUZNHaMNd549xcMDS/TRs6Rp/Q4ttp0994uLoN8HrSbXWZGRPM77qcD4Q3SmDr0DZqvCzBDA=="
+      "sig": "JaWiUYCalkBGY/4+39xJkG4iq1klM/einLVqtgTaraEgkzjcTzOA+kCXErBP86wySuYBsv9fQeqVVHaYlS9PAQ=="
     }
   ]
 }
