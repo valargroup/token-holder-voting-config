@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "payload": {
-    "config_sha256": "3bc14f50fb9f6f5099da105a8d92d4d5186dd2ebcf7330b8de7942ee2d1db0b7",
+    "config_sha256": "8754dcc6650a508c1faf4840081eab0a946fea0e4097445da2af62086b2912d8",
     "linux_amd64_sha256": "54adaefd9cca082276f5ebb8d9c9972bec5964da4ee9d8a0dcbd579bdadacf67",
     "linux_arm64_sha256": "67043e6a0251d6e9fed56364d864d6eae615f93ebad65f16349dbbfa8dbbfa14",
-    "snapshot_manifest_sha256": "cd0b2851df21766c93c7828a890f437215cdc41ae125350bd5e6fb702a110ab5",
+    "snapshot_manifest_sha256": "f6972eccda9b70dcd660b5f423f7fddc67bc0a3a1fa51b985ef07ca90919f68d",
     "service_sha256": "62bc266e40eca4224fbfe12e9bc39f15a68e454be428f3ac78b9d268594cb847"
   },
   "signatures": [
     {
       "key_id": "valargroup",
       "alg": "ed25519",
-      "sig": "7nAJHiVvbp6v/l2XTxkge4qwAwmD0bA/BeF7vk1GAOCO2g+y/08bv2SGs3aQk6bazvXsqlicTOB3KlBWY/tbDQ=="
+      "sig": "rY32m1kcDlaUZEkUZNHaMNd549xcMDS/TRs6Rp/Q4ttp0994uLoN8HrSbXWZGRPM77qcD4Q3SmDr0DZqvCzBDA=="
     }
   ]
 }
