@@ -671,6 +671,11 @@
           "key_id": "zodl-stage-vote-manager",
           "alg": "ed25519",
           "sig": "v55vUxCHVZiFYHVoiYEReJgh1p59B3itYC8aZhhwPhTg13zh/usJgL03E5wC3Zdmqp1nV1qrvl+agmZYLpfWCw=="
+        },
+        {
+          "key_id": "valar-test-keplr-derived",
+          "alg": "ed25519",
+          "sig": "AR8nXgo9lEGRdr6MhW4jxNNnLrdmXDD8f37yaHIU/QdGf/I3v6hAAVxt4ODOUNcq+KYtd7uabisOsopsYkrADw=="
         }
       ]
     },
