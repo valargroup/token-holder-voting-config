@@ -663,6 +663,17 @@
         }
       ]
     },
+    "1d5935ebf92e74bb43cb24fc38a9241320fa7a00a956ac2c48921b99c26b951f": {
+      "auth_version": 2,
+      "ea_pk": "awU/WnthkAknTLaw2w/gXlV7A4hVDK6+4sP4Wl5PbbQ=",
+      "signatures": [
+        {
+          "key_id": "zodl-stage-vote-manager",
+          "alg": "ed25519",
+          "sig": "v55vUxCHVZiFYHVoiYEReJgh1p59B3itYC8aZhhwPhTg13zh/usJgL03E5wC3Zdmqp1nV1qrvl+agmZYLpfWCw=="
+        }
+      ]
+    },
     "1d765108290577a1b6d2c7bee48931efcf2691f744a1a8d25d35cc164a7eaa24": {
       "auth_version": 1,
       "ea_pk": "J5qnP/NvJmhXgkaCFvIWLqQRM9VRMrcAnAPVMGYpyaU=",
