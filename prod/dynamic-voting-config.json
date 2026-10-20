@@ -40,6 +40,10 @@
     {
       "url": "https://v.ombie.cash",
       "label": "v.ombie.cash"
+    },
+    {
+      "url": "https://vote.atlasstaking.com",
+      "label": "Atlas Staking"
     }
   ],
   "pir_endpoints": [
