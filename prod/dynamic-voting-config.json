@@ -48,6 +48,10 @@
     {
       "url": "https://vote.atlasstaking.com",
       "label": "Atlas Staking"
+    },
+    {
+      "url": "https://zvote.polkachu.com",
+      "label": "polkachu"
     }
   ],
   "pir_endpoints": [
