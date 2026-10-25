@@ -38,14 +38,14 @@ jobs:
         id: monitor_start
         run: echo "epoch=$(date +%s)" >> "${GITHUB_OUTPUT}"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'push' && github.sha || 'main' }}
 
       - name: Restore voting-config verifier
         id: verifier-cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: ~/.local/bin/voting-config
           key: voting-config-${{ runner.os }}-${{ runner.arch }}-${{ env.VOTE_SDK_TAG }}-${{ env.VOTING_CONFIG_SHA256 }}
