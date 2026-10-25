@@ -1,0 +1,8 @@
+# Every change to main needs a maintainer's approval, except changes under
+# stage/. The main ruleset requires code-owner review, so a PR that touches
+# only stage/ (such as a signed staging round from the vote-sdk dashboard) can
+# merge without one, while prod config, pins, scripts and workflows cannot.
+*        @ValarDragon @p0mvn @czarcas7ic @evan-forbes
+
+# No owners: staging config may merge without a maintainer review.
+/stage/

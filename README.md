@@ -210,6 +210,12 @@ Bringing a vote server or PIR operator into rotation does not require a chain de
 
 Removing an operator or changing an operator URL follows the same PR flow.
 
+`main` only accepts changes through pull requests, and every change outside
+`stage/` needs an approval from a maintainer listed in
+[`.github/CODEOWNERS`](.github/CODEOWNERS). Changes that touch only `stage/`
+need no review; that is how signed staging rounds opened by the vote-sdk
+dashboard merge on their own.
+
 ## Adding or Rotating a Round
 
 A new round entry requires the vote manager to sign the round's public `ea_pk`
