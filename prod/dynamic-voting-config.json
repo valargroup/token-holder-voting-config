@@ -52,6 +52,10 @@
     {
       "url": "https://zvote.polkachu.com",
       "label": "polkachu"
+    },
+    {
+      "url": "https://zvote.cros-nest.net",
+      "label": "Crosnest"
     }
   ],
   "pir_endpoints": [
