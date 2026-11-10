@@ -56,6 +56,10 @@
     {
       "url": "https://zvote.cros-nest.net",
       "label": "Crosnest"
+    },
+    {
+      "url": "https://vote.infra.cypherpunk.com",
+      "label": "Cypherpunk"
     }
   ],
   "pir_endpoints": [
