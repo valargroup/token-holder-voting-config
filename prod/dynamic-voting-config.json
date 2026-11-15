@@ -212,6 +212,17 @@
         }
       ]
     },
+    "c8fd950a6fbc68fa809c3db04e412cc6aeac6e8e72989e87f69630c8cf0aa130": {
+      "auth_version": 2,
+      "ea_pk": "3mYQJEOOpe9XeiqW86m5SZ7x3Z2VxjtwuPaS6Tmm6a0=",
+      "signatures": [
+        {
+          "key_id": "valargroup",
+          "alg": "ed25519",
+          "sig": "bThL8cvxu0BCTCjuBxi92w96lhdPoX9QTKdb/xWaBYrRBlYy05eCzDIqmQnsbH+0XWC/qfNZDlr+v/RIo6p3Dw=="
+        }
+      ]
+    },
     "e6b5a7ef727e8d89550b35f4515ee483d7dfd8b6b3d318ef7f0bc4efc77d9912": {
       "auth_version": 2,
       "ea_pk": "A0ayM51nGLdridv7K8K/Jo5XUGvLHZSOB08hsw0jj58=",
