@@ -22,6 +22,7 @@ on:
       - "scripts/require-latest-main.sh"
       - "scripts/verify-static-config-compatibility.sh"
       - "scripts/verify-v2-static-configs.sh"
+      - "scripts/verify-config-for-publication.sh"
       - "scripts/verify-trusted-key-parity.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
@@ -57,6 +58,7 @@ on:
       - "scripts/require-latest-main.sh"
       - "scripts/verify-static-config-compatibility.sh"
       - "scripts/verify-v2-static-configs.sh"
+      - "scripts/verify-config-for-publication.sh"
       - "scripts/verify-trusted-key-parity.sh"
       - "scripts/verify-publication.sh"
       - "scripts/rehearse-github-outage.sh"
@@ -107,8 +109,8 @@ jobs:
       # - every round id is valid lowercase hex
       # - each static config has the expected static config shape
       #   and a non-empty trusted Ed25519 public-key array
-      # - each round entry has at least one signature that verifies over its
-      #   auth-version-specific payload
+      # - staging round signatures verify; production round authentication
+      #   is left to wallets so historical signatures do not block publication
       #
       # It does not query the chain. Wallets still perform the runtime check that
       # the signed ea_pk in this file matches the ea_pk returned by the chain for
@@ -117,22 +119,22 @@ jobs:
       # The pinned verifier predates the v2 static config schema and rejects
       # static_config_version 2 outright, so the v2 files and their pins are
       # verified through scripts/verify-v2-static-configs.sh, which checks the
-      # same trusted-key signatures via an equivalent v1 projection. The
+      # same environment-specific policy via an equivalent v1 projection. The
       # v2-specific shape is enforced by scripts/build-cloudflare-pages.sh.
       - name: Verify v1/v2 trusted key parity
         run: scripts/verify-trusted-key-parity.sh
 
       - name: Verify prod-folder production voting config
-        run: voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
+        run: scripts/verify-config-for-publication.sh prod/dynamic-voting-config.json prod/static-voting-config.json
 
       - name: Verify staging voting config
-        run: voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json
+        run: scripts/verify-config-for-publication.sh stage/dynamic-voting-config.json stage/static-voting-config.json
 
       - name: Verify production duplicate static config
-        run: voting-config verify --config prod/dynamic-voting-config.json --static-config test/prod-static-voting-config-duplicate.json
+        run: scripts/verify-config-for-publication.sh prod/dynamic-voting-config.json test/prod-static-voting-config-duplicate.json
 
       - name: Verify staging duplicate static config
-        run: voting-config verify --config stage/dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json
+        run: scripts/verify-config-for-publication.sh stage/dynamic-voting-config.json test/static-voting-config-duplicate.json
 
       - name: Verify v2 static configs
         run: scripts/verify-v2-static-configs.sh

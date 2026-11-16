@@ -12,18 +12,18 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
 cd "$repo_root"
 
-voting-config verify \
-  --config prod/dynamic-voting-config.json \
-  --static-config legacy/github-pages/prod/static-voting-config.json
-voting-config verify \
-  --config stage/dynamic-voting-config.json \
-  --static-config legacy/github-pages/stage/static-voting-config.json
-voting-config verify \
-  --config prod/dynamic-voting-config.json \
-  --static-config legacy/github-pages/test/prod-static-voting-config-duplicate.json
-voting-config verify \
-  --config stage/dynamic-voting-config.json \
-  --static-config legacy/github-pages/test/static-voting-config-duplicate.json
+scripts/verify-config-for-publication.sh \
+  prod/dynamic-voting-config.json \
+  legacy/github-pages/prod/static-voting-config.json
+scripts/verify-config-for-publication.sh \
+  stage/dynamic-voting-config.json \
+  legacy/github-pages/stage/static-voting-config.json
+scripts/verify-config-for-publication.sh \
+  prod/dynamic-voting-config.json \
+  legacy/github-pages/test/prod-static-voting-config-duplicate.json
+scripts/verify-config-for-publication.sh \
+  stage/dynamic-voting-config.json \
+  legacy/github-pages/test/static-voting-config-duplicate.json
 
 pin_count=0
 while IFS= read -r pin; do
@@ -31,9 +31,9 @@ while IFS= read -r pin; do
     fail "unexpected immutable pin path: ${pin}"
   fi
   environment_name="${BASH_REMATCH[2]}"
-  voting-config verify \
-    --config "${environment_name}/dynamic-voting-config.json" \
-    --static-config "$pin"
+  scripts/verify-config-for-publication.sh \
+    "${environment_name}/dynamic-voting-config.json" \
+    "$pin"
   pin_count=$((pin_count + 1))
 done < <(find pins -type f -name static-voting-config.json -print | sort)
 

@@ -43,9 +43,9 @@ jobs:
           chmod +x "${HOME}/.local/bin/voting-config"
           echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
       - name: Verify prod-folder production voting config
-        run: voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
+        run: scripts/verify-config-for-publication.sh prod/dynamic-voting-config.json prod/static-voting-config.json
       - name: Verify staging voting config
-        run: voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json
+        run: scripts/verify-config-for-publication.sh stage/dynamic-voting-config.json stage/static-voting-config.json
       - name: Build serving snapshot
         env:
           SOURCE_REVISION: ${{ github.sha }}

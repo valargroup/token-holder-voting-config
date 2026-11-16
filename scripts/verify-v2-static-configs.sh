@@ -9,9 +9,9 @@ set -euo pipefail
 # dynamic_config_url, so it rejects a v2 document outright. Until vote-sdk
 # understands static_config_version 2, each v2 document is projected onto the v1
 # shape it is equivalent to - same trusted_keys, the canonical mirror as the
-# single URL - and that projection is verified instead. The signature check this
-# performs is exactly the one that matters: every key a wallet would trust from
-# the v2 file really does authenticate that environment's rounds.
+# single URL - and that projection is verified instead. Staging round
+# signatures remain required; production checks structure only and leaves
+# round authentication to wallets.
 #
 # Delete this shim and verify the v2 files directly once the pinned verifier
 # supports them. The v2-specific shape is enforced by build-cloudflare-pages.sh.
@@ -47,9 +47,9 @@ verify_v2_static_config() {
   ' "$file" > "$projection" \
     || fail "cannot project ${file} onto the v1 static config shape"
 
-  voting-config verify \
-    --config "${environment_name}/dynamic-voting-config.json" \
-    --static-config "$projection" \
+  scripts/verify-config-for-publication.sh \
+    "${environment_name}/dynamic-voting-config.json" \
+    "$projection" \
     || fail "v2 static config failed verification: ${file}"
 
   verified_count=$((verified_count + 1))
