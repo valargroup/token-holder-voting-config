@@ -131,6 +131,11 @@
           "key_id": "valargroup",
           "alg": "ed25519",
           "sig": "a319gs15PZt6vZa2o+9b/eBR0bxYpezgAbE+6R2oMjzlHLwR+FgxVadiB+xQup76XEdA/BbRPTs7qrLsuUZ6BA=="
+        },
+        {
+          "key_id": "tachyon",
+          "alg": "ed25519",
+          "sig": "ROsOdnbTgGx5XoyND+sRPCOmDw0+8riTIinYVxk5BzMayuBhxCnKtwujd3Gb0e00seWHprD7UX5RkOWWeo+6DA=="
         }
       ]
     },
