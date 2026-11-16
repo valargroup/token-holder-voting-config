@@ -204,7 +204,7 @@ Bringing a vote server or PIR operator into rotation does not require a chain de
 
 1. Operator joins the chain, using [`vote-sdk`](https://github.com/valargroup/vote-sdk) tooling.
 2. Operator opens a PR adding their entry to the environment's `dynamic-voting-config.json` (`prod/` for production, `stage/` for staging).
-3. CI verifies every dynamic-config round signature against the matching environment's `static-voting-config.json` `trusted_keys`.
+3. CI verifies staging round signatures against the staging trusted keys. Production publication validates config structure without requiring every historical round signature to match the current global layout; wallets still authenticate each production round.
 4. Maintainer reviews and merges.
 5. The deploy workflows verify the config again before publishing a complete Cloudflare gateway deployment and the transition GitHub Pages mirror.
 
@@ -308,7 +308,7 @@ curl -fsSL \
 echo "40c2be2b97e27f2743f9f34107be7c21d9acd9d918bfda7ce61e0070d2f9fb77  voting-config" | sha256sum -c -
 chmod +x voting-config
 
-./voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
+PATH="$PWD:$PATH" scripts/verify-config-for-publication.sh prod/dynamic-voting-config.json prod/static-voting-config.json
 ./voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json
 
 # v2 files cannot be passed to --static-config yet; verify them through the shim.
@@ -320,11 +320,13 @@ SOURCE_REVISION=local-test \
 
 ## CI
 
+Production round signatures do not gate publication. Changing the global PIR layout can leave historical signatures invalid; wallets skip those rounds until they are re-signed. The publication verifier checks a temporary copy with an empty round map, after validating the original round map and IDs. Published files retain all original entries and signatures. Staging signatures, static trust-key parity, immutable pins, and coordinator-signed PIR updates remain enforced.
+
 Four workflows guard the serving path:
 
 - [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It downloads the checksum-pinned `voting-config` binary from the `vote-sdk` v1.3.0-rc.2 GitHub release and runs `voting-config verify`. It also runs [`scripts/verify-trusted-key-parity.sh`](scripts/verify-trusted-key-parity.sh) as its own step, so a trust set split between an environment's v1 and v2 files fails with a message naming the drifted keys.
 
-  That pinned verifier predates v2: it compares `static_config_version` for exact equality with `1` and requires a singular `dynamic_config_url`, so passing it a v2 file fails with `unsupported static_config_version 2`. Until `vote-sdk` supports the schema, [`scripts/verify-v2-static-configs.sh`](scripts/verify-v2-static-configs.sh) projects each v2 document onto the equivalent v1 shape - same `trusted_keys`, `dynamic_config_urls[0]` as the single URL - and verifies that, which runs exactly the signature check that matters. The v2-specific shape is enforced separately by [`scripts/build-cloudflare-pages.sh`](scripts/build-cloudflare-pages.sh) and covered by [`scripts/tests/v2-static-config-shape.sh`](scripts/tests/v2-static-config-shape.sh). Delete the shim once the pinned verifier understands v2.
+  That pinned verifier predates v2: it compares `static_config_version` for exact equality with `1` and requires a singular `dynamic_config_url`, so passing it a v2 file fails with `unsupported static_config_version 2`. Until `vote-sdk` supports the schema, [`scripts/verify-v2-static-configs.sh`](scripts/verify-v2-static-configs.sh) projects each v2 document onto the equivalent v1 shape - same `trusted_keys`, `dynamic_config_urls[0]` as the single URL - and applies the same publication policy: production structure validation and staging signature verification. The v2-specific shape is enforced separately by [`scripts/build-cloudflare-pages.sh`](scripts/build-cloudflare-pages.sh) and covered by [`scripts/tests/v2-static-config-shape.sh`](scripts/tests/v2-static-config-shape.sh). Delete the shim once the pinned verifier understands v2.
 - [`deploy-cloudflare-pages.yml`](.github/workflows/deploy-cloudflare-pages.yml) publishes one versioned gateway and fallback snapshot, verifies the exact served bytes and headers, and forces the GitHub-outage path once. It is inert until the explicit repository enable flag and exact Cloudflare target are configured.
 - [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) retains the GitHub Pages transition mirror while freezing its previously checksum-pinned static aliases.
 - [`deploy-duplicate-static-config.yml`](.github/workflows/deploy-duplicate-static-config.yml) applies the same full-snapshot publisher when a test alias changes.

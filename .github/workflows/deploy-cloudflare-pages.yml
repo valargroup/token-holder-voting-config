@@ -50,10 +50,10 @@ jobs:
       - name: Verify all published configs
         run: |
           scripts/verify-trusted-key-parity.sh
-          voting-config verify --config prod/dynamic-voting-config.json --static-config prod/static-voting-config.json
-          voting-config verify --config stage/dynamic-voting-config.json --static-config stage/static-voting-config.json
-          voting-config verify --config prod/dynamic-voting-config.json --static-config test/prod-static-voting-config-duplicate.json
-          voting-config verify --config stage/dynamic-voting-config.json --static-config test/static-voting-config-duplicate.json
+          scripts/verify-config-for-publication.sh prod/dynamic-voting-config.json prod/static-voting-config.json
+          scripts/verify-config-for-publication.sh stage/dynamic-voting-config.json stage/static-voting-config.json
+          scripts/verify-config-for-publication.sh prod/dynamic-voting-config.json test/prod-static-voting-config-duplicate.json
+          scripts/verify-config-for-publication.sh stage/dynamic-voting-config.json test/static-voting-config-duplicate.json
           scripts/verify-v2-static-configs.sh
 
       - name: Build serving snapshot
