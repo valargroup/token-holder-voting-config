@@ -5,9 +5,9 @@
 // wallet-list verify --chain-check` against the environment's chain, which
 // reports each listed delegate whose entry is missing, suspended or retired,
 // or has another provider, handle or key than its row. It then keeps one
-// open issue per wallet listing those findings: it opens the issue, updates
-// it and comments when the findings change, and closes it once every check of
-// that wallet comes back clean. A failed check fails the run, and its
+// open issue per wallet, also labelled `wallet:<wallet_id>`, listing those
+// findings: it opens the issue, updates it and comments when the findings
+// change, and closes it once every check of that wallet comes back clean. A failed check fails the run, and its
 // environment keeps the rows the issue already had while the wallet's other
 // environments are still reported.
 
@@ -33,6 +33,11 @@ const KIND_WORDS = {
   handle_mismatch: "registered with another handle",
   key_mismatch: "registered with another key than the row's dk",
 };
+
+/** The label each wallet's issue also carries, for its team to follow. */
+export function walletLabel(walletId) {
+  return `wallet:${walletId}`;
+}
 
 /** The hidden marker that ties an issue to its wallet. */
 export function issueMarker(walletId) {
@@ -96,7 +101,8 @@ export function renderIssueBody(walletId, results, previousBody = "") {
   const rows = results.flatMap((r) =>
     r.error
       ? previousRows(previousBody, r.env)
-      : r.findings.map((f) => `| ${r.env} | #${f.index} | @${f.handle} | ${KIND_WORDS[f.kind] ?? f.kind} | ${f.detail} |`)
+      : // Code spans, so `17` doesn't link issue #17 and `alice` mentions no GitHub user.
+        r.findings.map((f) => `| ${r.env} | \`${f.index}\` | \`${f.handle}\` | ${KIND_WORDS[f.kind] ?? f.kind} | ${f.detail} |`)
   );
   const unchecked = results.filter((r) => r.error).map((r) => r.env);
   return [
@@ -149,7 +155,7 @@ export async function reconcileIssue(github, walletId, results, openIssues) {
   }
   const body = renderIssueBody(walletId, results, issue?.body);
   if (!issue) {
-    await github("POST", "/issues", { title: `Re-review the ${walletId} wallet list`, body, labels: [ALERT_LABEL] });
+    await github("POST", "/issues", { title: `Re-review the ${walletId} wallet list`, body, labels: [ALERT_LABEL, walletLabel(walletId)] });
     return "opened";
   }
   if (issue.body === body) return "unchanged";

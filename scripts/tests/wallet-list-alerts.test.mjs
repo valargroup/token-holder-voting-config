@@ -80,7 +80,7 @@ try {
   };
   const everyKind = renderIssueBody("vizor", [{ env: "stage", findings: Object.keys(kinds).map((kind, i) => finding(i + 1, kind)) }]);
   Object.values(kinds).forEach((words, i) => {
-    assert.ok(everyKind.includes(`| stage | #${i + 1} | @h${i + 1} | ${words} | detail ${i + 1} |`), words);
+    assert.ok(everyKind.includes(`| stage | \`${i + 1}\` | \`h${i + 1}\` | ${words} | detail ${i + 1} |`), words);
   });
   assert.ok(!everyKind.includes("reviewed_keys"));
 
@@ -88,12 +88,14 @@ try {
   const results = [{ env: "prod", walletId: "vizor", findings: [finding(17, "key_mismatch"), finding(23, "retired")] }];
   const body = renderIssueBody("vizor", results);
   assert.ok(body.startsWith(issueMarker("vizor")));
-  assert.match(body, /\| prod \| #17 \| @h17 \| registered with another key than the row's dk \| detail 17 \|/);
-  assert.match(body, /\| prod \| #23 \| @h23 \| retired \| detail 23 \|/);
+  assert.match(body, /\| prod \| `17` \| `h17` \| registered with another key than the row's dk \| detail 17 \|/);
+  assert.match(body, /\| prod \| `23` \| `h23` \| retired \| detail 23 \|/);
+  // Nothing in it links an issue or mentions a GitHub user.
+  assert.doesNotMatch(body, /#\d|@\w/);
 
   let gh = fakeGitHub();
   assert.equal(await reconcileIssue(gh.github, "vizor", results, []), "opened");
-  assert.deepEqual(gh.calls, [{ method: "POST", path: "/issues", body: { title: "Re-review the vizor wallet list", body, labels: [ALERT_LABEL] } }]);
+  assert.deepEqual(gh.calls, [{ method: "POST", path: "/issues", body: { title: "Re-review the vizor wallet list", body, labels: [ALERT_LABEL, "wallet:vizor"] } }]);
 
   const otherWallet = { number: 3, body: issueMarker("other") };
   const pullRequest = { number: 4, body: issueMarker("vizor"), pull_request: {} };
@@ -178,8 +180,8 @@ try {
     assert.ok(bothLogs.includes("vizor: updated"), bothLogs.join("\n"));
     assert.ok(bothLogs.some((l) => l.includes("vizor stage list not checked::chain node_info: HTTP 502")), bothLogs.join("\n"));
     const patched = sent.find((s) => s.method === "PATCH").body.body;
-    assert.match(patched, /\| prod \| #17 \| @h17 \| suspended \| detail 17 \|/);
-    assert.match(patched, /\| stage \| #9 \| @h9 \| retired \| detail 9 \|/);
+    assert.match(patched, /\| prod \| `17` \| `h17` \| suspended \| detail 17 \|/);
+    assert.match(patched, /\| stage \| `9` \| `h9` \| retired \| detail 9 \|/);
     assert.match(patched, /latest stage check failed/);
 
     // A clean prod check with stage still down keeps the issue open.
@@ -188,7 +190,7 @@ try {
     assert.equal(await main({ root: both, env: bothEnv, run: stageDown([]), fetchImpl: issueFetch(sent), log: (l) => bothLogs.push(l) }), 1);
     assert.ok(!sent.some((s) => s.body && s.body.state === "closed"), JSON.stringify(sent));
     assert.ok(bothLogs.includes("vizor: updated"), bothLogs.join("\n"));
-    assert.match(sent.find((s) => s.method === "PATCH").body.body, /\| stage \| #9 \|/);
+    assert.match(sent.find((s) => s.method === "PATCH").body.body, /\| stage \| `9` \|/);
   } finally {
     rmSync(both, { recursive: true, force: true });
   }
