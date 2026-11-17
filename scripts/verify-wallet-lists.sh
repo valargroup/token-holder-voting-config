@@ -7,9 +7,9 @@ set -euo pipefail
 # signed list. Each list must verify as that wallet verifies it: its
 # wallet_id is the folder name, its chain_id the environment's chain, and a
 # signature by a key in signers.json covers it. CI also checks the picture
-# size and, given BASE_REVISION, that a changed list raised its version. The
-# folder layout itself is checked by build-cloudflare-pages.sh, which CI runs
-# in the same job.
+# size and, given BASE_REVISION, that a changed list raised its version and
+# that no list on the base revision was removed. The folder layout itself is
+# checked by build-cloudflare-pages.sh, which CI runs in the same job.
 
 fail() {
   printf 'error: %s\n' "$*" >&2
@@ -39,6 +39,18 @@ if [[ -n "$base_revision" ]]; then
 fi
 
 wallets_dir="${environment_name}/wallets"
+
+# A removed list could come back later at a lower version with nothing to
+# compare it to, and wallets that stored the old one would ignore it. A
+# wallet that wants no delegates publishes a higher version with none.
+if [[ -n "$base_revision" ]]; then
+  while IFS= read -r base_list; do
+    [[ "$base_list" =~ ^${wallets_dir}/[^/]+/list\.json$ ]] || continue
+    [[ -f "$base_list" ]] \
+      || fail "${base_list} exists at ${base_revision} and may not be removed; publish a higher version with no delegates instead"
+  done < <(git ls-tree -r --name-only "$base_revision" -- "$wallets_dir")
+fi
+
 [[ -d "$wallets_dir" ]] || exit 0
 
 work_dir="$(mktemp -d)"

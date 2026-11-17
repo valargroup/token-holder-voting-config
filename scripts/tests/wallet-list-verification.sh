@@ -100,6 +100,18 @@ FAKE_WALLET_LIST=true run_verify prod "$with_list" >/dev/null
 [[ "$(cat "$calls")" =~ ^"${prod_call}"\ --previous\ [^\ ]+$ ]] || fail "changed list ran: $(cat "$calls")"
 [[ "$(cat "${calls}.previous")" == '{"version":1}' ]] || fail "the previous list is not the base revision's"
 
+# A list on the base revision may not be removed, alone or with its folder.
+mv prod/wallets/vizor/list.json "${test_root}/list.json"
+expect_rejected removed-list "prod/wallets/vizor/list.json exists at ${with_list} and may not be removed" prod "$with_list"
+mv prod/wallets/vizor "${test_root}/vizor"
+expect_rejected removed-wallet "prod/wallets/vizor/list.json exists at ${with_list} and may not be removed" prod "$with_list"
+mv "${test_root}/vizor" prod/wallets/vizor
+mv "${test_root}/list.json" prod/wallets/vizor/list.json
+# Without a base revision there is nothing to compare.
+mv prod/wallets/vizor/list.json "${test_root}/list.json"
+FAKE_WALLET_LIST=true run_verify prod >/dev/null
+mv "${test_root}/list.json" prod/wallets/vizor/list.json
+
 set +e
 FAKE_WALLET_LIST=true FAKE_EXIT=1 run_verify prod >/dev/null
 status=$?
