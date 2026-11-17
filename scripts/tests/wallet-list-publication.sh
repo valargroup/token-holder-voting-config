@@ -14,16 +14,42 @@ test_root="$(make_test_temp_dir wallet-list-publication-test)"
 trap 'rm -rf "$test_root"' EXIT
 test_repo="${test_root}/repo"
 
-mkdir -p "$test_repo"
+fake_bin="${test_root}/bin"
+calls="${test_root}/calls"
+
+mkdir -p "$test_repo" "$fake_bin"
 rsync -a --exclude .git "$repo_root/" "$test_repo/"
+
+# Stands in for a voting-config with the wallet-list command. Each wallet
+# list verification appends its arguments to FAKE_CALLS, copies its
+# --previous file to FAKE_CALLS.<env>.previous, and exits FAKE_EXIT. Config
+# verification passes.
+cat > "${fake_bin}/voting-config" <<'FAKE'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "$1" == wallet-list ]] || exit 0
+[[ "$2" == verify ]] || exit 0
+printf '%s\n' "$*" >> "$FAKE_CALLS"
+previous=""
+for arg in "$@"; do
+  if [[ "$previous" == --list ]]; then environment_name="${arg%%/*}"; fi
+  if [[ "$previous" == --previous ]]; then cp "$arg" "${FAKE_CALLS}.${environment_name}.previous"; fi
+  previous="$arg"
+done
+exit "${FAKE_EXIT:-0}"
+FAKE
+chmod +x "${fake_bin}/voting-config"
 
 build() {
   local builder="$1"
   local output_dir="$2"
+  : > "$calls"
   (
     cd "$test_repo"
-    SOURCE_REVISION=local-test \
+    SOURCE_REVISION="${SOURCE_REVISION:-local-test}" \
     PUBLISHED_AT=2026-08-17T00:00:00Z \
+    PATH="${fake_bin}:${PATH}" \
+    FAKE_CALLS="$calls" \
       "scripts/${builder}" "$output_dir" 2>&1
   )
 }
@@ -97,5 +123,38 @@ unlink "${test_repo}/stage/wallets"
 mv "${test_root}/stage-wallets" "${test_repo}/stage/wallets"
 
 build build-cloudflare-pages.sh "${test_root}/restored-site" >/dev/null
+
+# Each published list goes through the wallet list verification CI runs, and
+# one that fails it stops the build.
+[[ "$(grep -c '^wallet-list verify --list ' "$calls")" -eq 2 ]] \
+  || fail "the build did not verify both lists: $(cat "$calls")"
+grep -F -- "--list stage/wallets/vizor/list.json --wallet-id vizor --chain-id svote-1" "$calls" >/dev/null \
+  || fail "the stage list was not verified for its chain: $(cat "$calls")"
+set +e
+FAKE_EXIT=1 build build-cloudflare-pages.sh "${test_root}/unverified-site" >/dev/null
+status=$?
+set -e
+[[ "$status" -ne 0 ]] || fail "builder published a list that fails verification"
+[[ ! -e "${test_root}/unverified-site/prod" ]] || fail "builder wrote a site with an unverified list"
+
+# A real revision's lists are checked against its first parent's, which
+# must have a lower version.
+(
+  cd "$test_repo"
+  git init --quiet
+  git config user.name test
+  git config user.email test@example.invalid
+  printf '{"version":1}\n' > prod/wallets/vizor/list.json
+  git add .
+  git commit --quiet -m 'list v1'
+  printf '{"version":2}\n' > prod/wallets/vizor/list.json
+  git commit --quiet -am 'list v2'
+)
+SOURCE_REVISION="$(git -C "$test_repo" rev-parse HEAD)" \
+  build build-cloudflare-pages.sh "${test_root}/revision-site" >/dev/null
+grep -E -- "^wallet-list verify --list prod/wallets/vizor/list.json .* --previous [^ ]+$" "$calls" >/dev/null \
+  || fail "the prod list was not checked against the previous revision: $(cat "$calls")"
+[[ "$(cat "${calls}.prod.previous")" == '{"version":1}' ]] \
+  || fail "the previous list is not the first parent's"
 
 printf 'Wallet list publication test passed\n'

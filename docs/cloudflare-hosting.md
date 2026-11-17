@@ -61,7 +61,11 @@ do not mix snapshots with different freshness.
    legacy alias. v2 pins are verified through
    `scripts/verify-v2-static-configs.sh`, because the pinned verifier rejects
    `static_config_version: 2` outright.
-6. Copies only the public allowlist, including each wallet's signed delegate
+6. Runs `scripts/verify-wallet-lists.sh`, CI's wallet list check, on each
+   wallet's signed delegate list: its format, its signature by a key the
+   wallet's `signers.json` pins, and, against the source revision's first
+   parent, a higher version for a changed list and no removed list.
+7. Copies only the public allowlist, including each wallet's signed delegate
    list at `prod/wallets/<wallet_id>/list.json` and
    `stage/wallets/<wallet_id>/list.json` (its `signers.json` stays in the
    repository), adds checksum sidecars, writes a manifest, and embeds the exact

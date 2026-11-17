@@ -102,6 +102,18 @@ for scope in prod stage; do
   done < <(find "$wallets_dir" -mindepth 1 -print | sort)
 done
 
+# Publication repeats CI's wallet list verification, so a list that skipped
+# CI can't go out: its format, its signature by a pinned key and, against
+# the source revision's first parent, its version. Every main revision is
+# checked against the one before it, so versions only rise along main.
+wallet_list_base=""
+if [[ "$source_revision" != "local-test" ]]; then
+  wallet_list_base="$(git rev-parse --verify --quiet "${source_revision}^1" || true)"
+fi
+for scope in prod stage; do
+  scripts/verify-wallet-lists.sh "$scope" ${wallet_list_base:+"$wallet_list_base"} >/dev/null
+done
+
 for file in "${public_files[@]}"; do
   [[ -f "$file" && ! -L "$file" ]] || fail "missing or unsafe public file: ${file}"
   jq -e . "$file" >/dev/null || fail "invalid JSON: ${file}"
