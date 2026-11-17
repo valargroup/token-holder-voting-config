@@ -79,6 +79,29 @@ for scope in prod stage; do
   if [[ -f "${scope}/pir_attestations.json" ]]; then public_files+=("${scope}/pir_attestations.json"); fi
 done
 
+# Each wallet's signed delegate list (proxy delegation contracts-v1 §12.3)
+# is published at <env>/wallets/<wallet_id>/list.json. Its signers.json, which
+# pins the keys CI accepts for the list, stays in the repository.
+for scope in prod stage; do
+  wallets_dir="${scope}/wallets"
+  [[ -e "$wallets_dir" || -L "$wallets_dir" ]] || continue
+  [[ -d "$wallets_dir" && ! -L "$wallets_dir" ]] \
+    || fail "wallet lists must be in a regular directory: ${wallets_dir}"
+  while IFS= read -r wallet_path; do
+    [[ "$wallet_path" =~ ^(prod|stage)/wallets/[a-z][a-z0-9-]{0,31}(/(list|signers)\.json)?$ ]] \
+      || fail "unexpected wallet list path: ${wallet_path}"
+    if [[ -z "${BASH_REMATCH[2]}" ]]; then
+      [[ -d "$wallet_path" && ! -L "$wallet_path" ]] \
+        || fail "a wallet folder must be a regular directory: ${wallet_path}"
+      continue
+    fi
+    [[ -f "$wallet_path" && ! -L "$wallet_path" ]] \
+      || fail "wallet files must be regular files: ${wallet_path}"
+    jq -e . "$wallet_path" >/dev/null || fail "invalid JSON: ${wallet_path}"
+    if [[ "${BASH_REMATCH[3]}" == list ]]; then public_files+=("$wallet_path"); fi
+  done < <(find "$wallets_dir" -mindepth 1 -print | sort)
+done
+
 for file in "${public_files[@]}"; do
   [[ -f "$file" && ! -L "$file" ]] || fail "missing or unsafe public file: ${file}"
   jq -e . "$file" >/dev/null || fail "invalid JSON: ${file}"

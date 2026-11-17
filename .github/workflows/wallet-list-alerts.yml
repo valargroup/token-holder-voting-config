@@ -1,0 +1,56 @@
+name: Wallet list alerts
+
+# Checks every wallet list's delegates against each environment's chain once a
+# day and keeps one issue per wallet open while a listed delegate needs a
+# re-review: its entry is missing, suspended or retired, or has another
+# provider, handle or key than its row (scripts/wallet-list-alerts.mjs).
+
+on:
+  schedule:
+    - cron: "23 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: wallet-list-alerts
+  cancel-in-progress: false
+
+env:
+  # The same verifier release as verify-config.yml; bump them together. The
+  # check needs a release with `voting-config wallet-list`, so this run fails
+  # while a list exists and the pin predates it.
+  VOTE_SDK_TAG: v1.3.0-rc.2
+  VOTING_CONFIG_ASSET: voting-config-linux-amd64
+  VOTING_CONFIG_SHA256: 40c2be2b97e27f2743f9f34107be7c21d9acd9d918bfda7ce61e0070d2f9fb77
+  # Chain REST endpoints: each environment's valargroup vote server. The
+  # verifier checks that each serves the list's chain id.
+  PROD_CHAIN_URL: https://prod.vote-chain-primary.valargroup.org
+  STAGE_CHAIN_URL: https://stage.vote-chain-primary.valargroup.org
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install voting-config verifier
+        run: |
+          mkdir -p "${HOME}/.local/bin"
+          curl -fsSL \
+            "https://github.com/valargroup/vote-sdk/releases/download/${VOTE_SDK_TAG}/${VOTING_CONFIG_ASSET}" \
+            -o "${HOME}/.local/bin/voting-config"
+          echo "${VOTING_CONFIG_SHA256}  ${HOME}/.local/bin/voting-config" | sha256sum -c -
+          chmod +x "${HOME}/.local/bin/voting-config"
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+
+      - name: Check listed delegates and update alert issues
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/wallet-list-alerts.mjs

@@ -1,0 +1,8 @@
+[
+  {
+    "key_id": "valargroup",
+    "alg": "ed25519",
+    "pubkey": "8oQiUWq6QDGnAgRw6U3YhnXb6JLFSXauYnWHIFmJRcw=",
+    "notes": "Valar's vote-manager Keplr-derived key, the one key Vizor pins for its zvote-1 list"
+  }
+]

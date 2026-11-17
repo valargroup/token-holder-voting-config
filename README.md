@@ -275,6 +275,25 @@ printf '%s\n' '<vote-manager-keplr-mnemonic>' | ./voting-config config-attestati
 derives a different Ed25519 key. The default path is Keplr's Cosmos account
 path, `m/44'/118'/0'/0/0`, with `sv` bech32 addresses.
 
+## Wallet Lists
+
+A wallet list is one wallet's long-lived signed list of curated proxy delegates, with each delegate's name, statement and small picture (vote-sdk's `docs/proxy-delegation/contracts-v1.md` §12.3). Each row names a registry entry by `index`, `provider`, `handle` and `dk`, the entry's key the wallet reviewed, as a `zvdk1…` string. Each wallet keeps one folder per environment:
+
+- `<env>/wallets/<wallet_id>/signers.json` names the keys the wallet's build pins for its list on that environment's chain, as an array of `{key_id, alg, pubkey}` entries. CI accepts a list only when one of these keys signed it. Wallets never read this file: their pins are compiled in, so change it only together with a wallet release.
+- `<env>/wallets/<wallet_id>/list.json` is the signed list. The gateway serves it at `https://voting.valargroup.dev/<env>/wallets/<wallet_id>/list.json` with the dynamic config's short cache. `signers.json` is not published.
+
+Vizor pins `valargroup` (`8oQiUWq6QDGnAgRw6U3YhnXb6JLFSXauYnWHIFmJRcw=`, the vote-manager Keplr-derived key) for `prod` on `zvote-1`, and `valar-test-keplr-derived` (`NDygCpG+Y4T4uu8M1Sb/YG+74lUVj9XgYypUoMQMXT8=`) for `stage` on `svote-1`, and accepts no other key.
+
+**Signing a list.** Edit the list JSON (unsigned is fine), raising `version` whenever anything in it changes. Then, in the vote-sdk admin UI's **Sign wallet list** page, connect the Keplr account of the pinned key, load the file and sign it. Signing sets `issued_at` to the signing time. Open the pull request with the signed file by hand. Offline, `voting-config wallet-list payload` prints the bytes to sign and `voting-config wallet-list sign` signs with a key file (vote-sdk `cmd/voting-config/README.md`).
+
+**CI.** [`scripts/verify-wallet-lists.sh`](scripts/verify-wallet-lists.sh) runs `voting-config wallet-list verify` on every list, with `--wallet-id` set to its folder name, `--chain-id` to the environment's chain (`prod` is `zvote-1`, `stage` is `svote-1`), an `--allowed-key` for each `signers.json` entry, and `--previous` set to the list the change replaces. A list must verify as the wallet verifies it, every picture must be a 128 x 128 WebP, and a changed list must carry a higher `version`. A wallet folder holds only those two files, and a folder with a list must have `signers.json`.
+
+A bad merge can only make a list fail the wallet's own verification, which leaves the wallet on its stored list. It can never list someone unsigned, so lists need no special approval check.
+
+**Re-review alert.** [`wallet-list-alerts.yml`](.github/workflows/wallet-list-alerts.yml) runs daily at 07:23 UTC and by hand. For every list it runs `voting-config wallet-list verify --chain-check` against the environment's valargroup vote server, which reports each listed delegate that a wallet no longer shows as reviewed: its entry is not registered, suspended or retired, or has another provider, handle or key than the row. A delegate who retires an entry and registers again gets a new index and key, so its row needs both. [`scripts/wallet-list-alerts.mjs`](scripts/wallet-list-alerts.mjs) keeps one open issue per wallet, labelled `wallet-list-alert`, listing those delegates: it opens the issue, rewrites it and comments when the findings change, and closes it once every list of that wallet checks clean. If a list or a chain cannot be checked, the run fails, the issue keeps that environment's rows from the last check that worked, the wallet's other environments are still reported, and the issue stays open.
+
+**Rollout.** CI's pinned `voting-config` v1.3.0-rc.2 has no `wallet-list` command, so any `list.json` fails CI, and the alert run, until `VOTE_SDK_TAG` and `VOTING_CONFIG_SHA256` in [`verify-config.yml`](.github/workflows/verify-config.yml) and [`wallet-list-alerts.yml`](.github/workflows/wallet-list-alerts.yml) name a release that has it.
+
 ## Signing Key Custody
 
 Each environment's `static-voting-config.json` lists every public key that wallets trust under its `trusted_keys` array. Its `v2-static-voting-config.json` must trust the identical set of keys, so a key addition, rotation, or removal has to land in both files in the same PR.
@@ -324,7 +343,7 @@ Production round signatures do not gate publication. Changing the global PIR lay
 
 Four workflows guard the serving path:
 
-- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, or workflow files. It downloads the checksum-pinned `voting-config` binary from the `vote-sdk` v1.3.0-rc.2 GitHub release and runs `voting-config verify`. It also runs [`scripts/verify-trusted-key-parity.sh`](scripts/verify-trusted-key-parity.sh) as its own step, so a trust set split between an environment's v1 and v2 files fails with a message naming the drifted keys.
+- [`verify-config.yml`](.github/workflows/verify-config.yml) runs on pull requests and pushes that touch the dynamic config, static config, wallet lists, or workflow files. It downloads the checksum-pinned `voting-config` binary from the `vote-sdk` v1.3.0-rc.2 GitHub release and runs `voting-config verify`, and [`scripts/verify-wallet-lists.sh`](scripts/verify-wallet-lists.sh) for wallet lists (see **Wallet Lists**). It also runs [`scripts/verify-trusted-key-parity.sh`](scripts/verify-trusted-key-parity.sh) as its own step, so a trust set split between an environment's v1 and v2 files fails with a message naming the drifted keys.
 
   That pinned verifier predates v2: it compares `static_config_version` for exact equality with `1` and requires a singular `dynamic_config_url`, so passing it a v2 file fails with `unsupported static_config_version 2`. Until `vote-sdk` supports the schema, [`scripts/verify-v2-static-configs.sh`](scripts/verify-v2-static-configs.sh) projects each v2 document onto the equivalent v1 shape - same `trusted_keys`, `dynamic_config_urls[0]` as the single URL - and applies the same publication policy: production structure validation and staging signature verification. The v2-specific shape is enforced separately by [`scripts/build-cloudflare-pages.sh`](scripts/build-cloudflare-pages.sh) and covered by [`scripts/tests/v2-static-config-shape.sh`](scripts/tests/v2-static-config-shape.sh). Delete the shim once the pinned verifier understands v2.
 - [`deploy-cloudflare-pages.yml`](.github/workflows/deploy-cloudflare-pages.yml) publishes one versioned gateway and fallback snapshot, verifies the exact served bytes and headers, and forces the GitHub-outage path once. It is inert until the explicit repository enable flag and exact Cloudflare target are configured.

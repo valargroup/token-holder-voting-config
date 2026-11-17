@@ -223,6 +223,9 @@ source_paths=(
 for scope in prod stage; do
   if [[ -f "$expected_dir/$scope/pir_attestations.json" ]]; then source_paths+=("$scope/pir_attestations.json"); fi
 done
+while IFS= read -r wallet_list; do
+  source_paths+=("${wallet_list#"$expected_dir/"}")
+done < <(find "$expected_dir/prod/wallets" "$expected_dir/stage/wallets" -name list.json -type f -print 2>/dev/null | sort)
 
 paths=(
   "${source_paths[@]}"

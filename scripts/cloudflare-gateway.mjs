@@ -33,8 +33,16 @@ const PIN_PATH_PATTERN =
 const PIN_SIDECAR_PATTERN =
   /^pins\/(?:test\/)?(?:prod|stage)\/[0-9a-f]{64}\/(?:v2-)?static-voting-config\.json\.sha256$/;
 
+// Each wallet's signed delegate list. It changes when the wallet re-signs it,
+// so it takes the default short cache.
+const WALLET_LIST_PATTERN = /^(?:prod|stage)\/wallets\/[a-z][a-z0-9-]{0,31}\/list\.json$/;
+
 function isSourcePath(path) {
-  return SOURCE_PATHS.has(path) || PIN_PATH_PATTERN.test(path);
+  return (
+    SOURCE_PATHS.has(path) ||
+    PIN_PATH_PATTERN.test(path) ||
+    WALLET_LIST_PATTERN.test(path)
+  );
 }
 
 function isAssetOnlyPath(path) {

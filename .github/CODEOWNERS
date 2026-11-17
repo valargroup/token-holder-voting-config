@@ -6,3 +6,7 @@
 
 # No owners: staging config may merge without a maintainer review.
 /stage/
+
+# A wallet's signers.json must match the keys its released build pins, so
+# changing it needs a maintainer even on stage.
+/stage/wallets/*/signers.json  @ValarDragon @p0mvn @czarcas7ic @evan-forbes
