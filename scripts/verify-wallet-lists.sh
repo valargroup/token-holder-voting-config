@@ -6,10 +6,10 @@ set -euo pipefail
 # wallet pins for its list in this environment, and optionally list.json, the
 # signed list. Each list must verify as that wallet verifies it: its
 # wallet_id is the folder name, its chain_id the environment's chain, and a
-# signature by a key in signers.json covers it. CI also checks the picture
-# size and, given BASE_REVISION, that a changed list raised its version and
-# that no list on the base revision was removed. The folder layout itself is
-# checked by build-cloudflare-pages.sh, which CI runs in the same job.
+# signature by a key in signers.json covers it. Given BASE_REVISION, CI also
+# checks that a changed list raised its version and that no list on the base
+# revision was removed. The folder layout itself is checked by
+# build-cloudflare-pages.sh, which CI runs in the same job.
 
 fail() {
   printf 'error: %s\n' "$*" >&2
