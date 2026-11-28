@@ -61,8 +61,15 @@ do not mix snapshots with different freshness.
    legacy alias. v2 pins are verified through
    `scripts/verify-v2-static-configs.sh`, because the pinned verifier rejects
    `static_config_version: 2` outright.
-6. Copies only the public allowlist, adds checksum sidecars, writes a manifest,
-   and embeds the exact source revision in the Pages gateway.
+6. Runs `scripts/verify-wallet-lists.sh`, CI's wallet list check, on each
+   wallet's signed delegate list: its format, its signature by a key the
+   wallet's `signers.json` pins, and, against the source revision's first
+   parent, a higher version for a changed list and no removed list.
+7. Copies only the public allowlist, including each wallet's signed delegate
+   list at `prod/wallets/<wallet_id>/list.json` and
+   `stage/wallets/<wallet_id>/list.json` (its `signers.json` stays in the
+   repository), adds checksum sidecars, writes a manifest, and embeds the exact
+   source revision in the Pages gateway.
 
 CI uses full Git history so the immutable-pin check cannot be weakened by a
 caller-selected comparison revision. `SOURCE_REVISION=local-test` exists only
@@ -86,7 +93,7 @@ the existing bootstrap with the reviewed `main` snapshot.
 
 | Path | Cache-Control | Behavior |
 | --- | --- | --- |
-| Dynamic configs, PIR configs, manifest | `max-age=60, must-revalidate, stale-if-error=86400` | Changes appear quickly; caches may reuse a response during a serving error. |
+| Dynamic configs, PIR configs, wallet lists, manifest | `max-age=60, must-revalidate, stale-if-error=86400` | Changes appear quickly; caches may reuse a response during a serving error. |
 | Current static aliases and test aliases | `max-age=300, must-revalidate, stale-if-error=86400` | Mutable aliases refresh within five minutes. |
 | `pins/**` | `max-age=31536000, immutable` | The URL contains the file SHA-256 and its bytes cannot change or disappear. |
 

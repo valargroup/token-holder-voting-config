@@ -292,6 +292,71 @@ for (const primaryFetch of [
   assert.equal(response.headers.get("cache-control"), "no-store");
 }
 
+{
+  const listPath = "prod/wallets/vizor/list.json";
+  let primaryRequest;
+  const { response, assets } = await gateway(listPath, async (request) => {
+    primaryRequest = request;
+    return new Response('{"format":"zcash-vote-wallet-list/v1"}\n');
+  });
+  assert.equal(await response.text(), '{"format":"zcash-vote-wallet-list/v1"}\n');
+  assert.equal(response.headers.get("x-voting-config-origin"), "github");
+  assert.equal(
+    response.headers.get("cache-control"),
+    "public, max-age=60, must-revalidate, stale-if-error=86400"
+  );
+  assert.equal(
+    primaryRequest.url,
+    `https://raw.githubusercontent.com/valargroup/token-holder-voting-config/${sourceRevision}/${listPath}`
+  );
+  assert.equal(assets.requests.length, 0);
+}
+
+{
+  const listPath = "stage/wallets/other-wallet-2/list.json";
+  const { response, assets } = await gateway(
+    listPath,
+    async () => new Response("unavailable", { status: 503 })
+  );
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("x-voting-config-origin"), "cloudflare");
+  assert.equal(assets.requests.length, 1);
+  assert.equal(assets.requests[0].url, `https://voting.valargroup.dev/${listPath}`);
+}
+
+// Near misses of <prod|stage>/wallets/<wallet_id>/list.json, and the signer
+// file, never reach either origin.
+for (const path of [
+  "prod/wallets/vizor/signers.json",
+  "prod/wallets/Vizor/list.json",
+  "prod/wallets/1vizor/list.json",
+  `prod/wallets/${"a".repeat(33)}/list.json`,
+  "prod/wallets/vizor_x/list.json",
+  "prod/wallets/vizor/list.json.sha256",
+  "prod/wallets/vizor/list.JSON",
+  "prod/wallets/vizor/nested/list.json",
+  "prod/wallets/list.json",
+  "test/wallets/vizor/list.json",
+  "wallets/vizor/list.json",
+  "prod%2Fwallets%2Fvizor%2Flist.json",
+  "prod/wallets/vizor/",
+]) {
+  let primaryCalls = 0;
+  const assets = assetBinding();
+  const { response } = await gateway(
+    path,
+    async () => {
+      primaryCalls += 1;
+      return new Response("unexpected");
+    },
+    assets
+  );
+  assert.equal(response.status, 404, path);
+  assert.equal(response.headers.get("cache-control"), "no-store", path);
+  assert.equal(primaryCalls, 0, path);
+  assert.equal(assets.requests.length, 0, path);
+}
+
 console.log("Cloudflare gateway unit tests passed");
 
 for (const path of ["prod/pir_attestations.json", "stage/pir_attestations.json"]) {
